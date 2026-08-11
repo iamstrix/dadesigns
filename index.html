@@ -1383,11 +1383,43 @@
             box-shadow: 0 3px 0 rgba(0, 0, 0, .25);
         }
 
+        /* The other half of the zine language: not ransom type but the
+           photocopied image. A third-generation copy has no midtones —
+           it blows out to a coarse 1-bit dot screen, which is what the
+           overlaid radial-gradient reproduces. */
+        .zine-halftone {
+            position: relative;
+            background: #fff;
+            filter: contrast(2.4) grayscale(1);
+        }
+
+        .zine-halftone::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: radial-gradient(#000 34%, transparent 35%);
+            background-size: 5px 5px;
+            mix-blend-mode: multiply;
+            opacity: .85;
+            pointer-events: none;
+        }
+
+        /* One flat spot colour over the black-and-white. A photocopier
+           prints one ink; a second pass on a second machine is the only
+           way this style ever got colour, so it is never subtle. */
+        .zine-spot {
+            background: #7c3aed;
+            color: #fff;
+            transform: rotate(-1.5deg);
+        }
+
         /* ============================================================
-           ===========  SERIES II — CONCEPTS 27-36  ====================
-           The A-Z series covered aesthetics densely but left three
-           clusters empty: current-generation material languages,
-           pre-digital art movements, and production/craft patterns.
+           ===========  SERIES II — CONCEPTS 27-43  ====================
+           The A-Z series covered aesthetics densely but left whole
+           regions empty: current-generation material languages,
+           pre-digital art movements, production/craft patterns, a
+           second run of movements, and the character-cell aesthetics
+           that were hardware limits before they were styles.
            ============================================================ */
 
         .series-band {
@@ -2018,6 +2050,595 @@
             border-radius: 2px;
         }
 
+        /* ------------------------------------------------------------
+           37. JUGENDSTIL / ART NOUVEAU
+           Ornament is structure here, not garnish: the frame, the arch
+           and the whiplash line are what hold the composition together,
+           so they are drawn with borders rather than dropped in as
+           images. Every curve is a border-radius on a real box.
+           ------------------------------------------------------------ */
+        .theme-nouveau {
+            background: #f7f1e3;
+            color: #3b3227;
+            font-family: 'Lora', Georgia, serif;
+            --nv-gold: #a9884f;
+            --nv-gold-soft: #d8c49a;
+        }
+
+        .nv-frame {
+            border: 1px solid var(--nv-gold);
+            padding: 2px;
+            background: #fdfaf2;
+        }
+
+        .nv-frame>* {
+            border: 1px solid var(--nv-gold-soft);
+        }
+
+        /* The arch is the Mucha panel: a full half-round top on a real box. */
+        .nv-arch {
+            border: 1px solid var(--nv-gold);
+            border-radius: 999px 999px 4px 4px;
+            background: linear-gradient(#fdfaf2, #f2e9d5);
+        }
+
+        .nv-eyebrow {
+            font-family: 'Cinzel', Georgia, serif;
+            font-size: .68rem;
+            letter-spacing: .34em;
+            text-transform: uppercase;
+            color: var(--nv-gold);
+        }
+
+        .nv-display {
+            font-family: 'Cinzel', Georgia, serif;
+            font-weight: 400;
+            letter-spacing: .02em;
+            line-height: 1.05;
+        }
+
+        /* Whiplash: a dome in the top half meeting a bowl in the bottom half.
+           Both arcs end on the centre line, so they join into one continuous
+           S rather than reading as two stray hairlines. */
+        .nv-whip {
+            position: relative;
+            height: 46px;
+        }
+
+        .nv-whip::before,
+        .nv-whip::after {
+            content: '';
+            position: absolute;
+            width: 50%;
+            height: 50%;
+        }
+
+        .nv-whip::before {
+            left: 0;
+            top: 0;
+            border-top: 1px solid var(--nv-gold);
+            border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+        }
+
+        .nv-whip::after {
+            right: 0;
+            top: 50%;
+            border-bottom: 1px solid var(--nv-gold);
+            border-radius: 0 0 50% 50% / 0 0 100% 100%;
+        }
+
+        .nv-rule {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--nv-gold), transparent);
+        }
+
+        .nv-lozenge {
+            width: 9px;
+            height: 9px;
+            background: var(--nv-gold);
+            transform: rotate(45deg);
+        }
+
+        .nv-drop::first-letter {
+            font-family: 'Cinzel', Georgia, serif;
+            float: left;
+            font-size: 3.3rem;
+            line-height: .82;
+            padding: .06em .16em 0 0;
+            color: var(--nv-gold);
+        }
+
+        .nv-btn {
+            border: 1px solid var(--nv-gold);
+            color: #3b3227;
+            background: transparent;
+            font-family: 'Cinzel', Georgia, serif;
+            font-size: .72rem;
+            letter-spacing: .22em;
+            text-transform: uppercase;
+            padding: .7rem 1.6rem;
+            transition: background-color .3s ease, color .3s ease;
+        }
+
+        .nv-btn:hover {
+            background: var(--nv-gold);
+            color: #fdfaf2;
+        }
+
+        /* ------------------------------------------------------------
+           38. SOVIET CONSTRUCTIVISM
+           The diagonal is load-bearing. Nothing here is allowed to sit
+           square to the page except the reading text itself, and the
+           red rules deliberately run past the edge so the composition
+           reads as a fragment of something larger.
+           ------------------------------------------------------------ */
+        .theme-konstrukt {
+            background: #efeae1;
+            color: #111;
+            font-family: 'Inter', system-ui, sans-serif;
+            position: relative;
+            overflow: hidden;
+            --kn-red: #d4232a;
+        }
+
+        /* A fixed band rather than a percentage of the section: the wedge has
+           to clear the headline reliably at every viewport, and black type on
+           a black wedge is the one failure this style cannot survive. */
+        .kn-wedge {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 0;
+            height: 190px;
+            background: #111;
+            clip-path: polygon(0 14%, 100% 0, 100% 62%, 0 88%);
+            pointer-events: none;
+        }
+
+        .kn-rule {
+            position: absolute;
+            left: -10%;
+            width: 120%;
+            height: 3px;
+            background: var(--kn-red);
+            transform-origin: left center;
+            pointer-events: none;
+        }
+
+        /* Condensed grotesque without shipping a condensed face: squeeze
+           a real weight horizontally. Keep it above 0.78 or the joins
+           collapse. */
+        .kn-head {
+            display: inline-block;
+            font-weight: 900;
+            font-size: clamp(3rem, 11vw, 7.5rem);
+            line-height: .82;
+            letter-spacing: -.02em;
+            text-transform: uppercase;
+            transform: scaleX(.84);
+            transform-origin: left center;
+        }
+
+        .kn-red {
+            color: var(--kn-red);
+        }
+
+        .kn-micro {
+            font-size: .58rem;
+            font-weight: 700;
+            letter-spacing: .3em;
+            text-transform: uppercase;
+        }
+
+        .kn-card {
+            background: #fdfcfa;
+            border: 2px solid #111;
+            padding: 1.6rem;
+        }
+
+        .kn-tilt {
+            transform: rotate(-2.5deg);
+        }
+
+        .kn-btn {
+            background: var(--kn-red);
+            color: #efeae1;
+            font-weight: 800;
+            font-size: .72rem;
+            letter-spacing: .18em;
+            text-transform: uppercase;
+            padding: .75rem 1.5rem;
+            border: 0;
+            transition: background-color .15s linear;
+        }
+
+        .kn-btn:hover {
+            background: #111;
+        }
+
+        /* ------------------------------------------------------------
+           39. DE STIJL / NEOPLASTICISM
+           The black rules are not borders drawn on cells — they are the
+           grid gap showing through a black ground. That is why the
+           joins are perfect and why no rule ever stops short.
+           ------------------------------------------------------------ */
+        .theme-stijl {
+            background: #f4f4f0;
+            color: #111;
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+
+        .st-grid {
+            display: grid;
+            gap: 9px;
+            background: #111;
+            border: 9px solid #111;
+        }
+
+        .st-cell {
+            background: #fff;
+            min-height: 68px;
+            padding: 1rem 1.1rem;
+            display: flex;
+            align-items: flex-end;
+        }
+
+        .st-red {
+            background: #c8102e;
+            color: #fff;
+        }
+
+        .st-blue {
+            background: #0b4ea2;
+            color: #fff;
+        }
+
+        .st-yellow {
+            background: #f2c200;
+        }
+
+        .st-black {
+            background: #111;
+            color: #fff;
+        }
+
+        .st-head {
+            font-weight: 900;
+            font-size: clamp(2.6rem, 8vw, 5rem);
+            line-height: .88;
+            letter-spacing: -.03em;
+            text-transform: uppercase;
+        }
+
+        .st-label {
+            font-size: .6rem;
+            font-weight: 700;
+            letter-spacing: .26em;
+            text-transform: uppercase;
+        }
+
+        /* ------------------------------------------------------------
+           40. PSYCHEDELIC / MOSCOSO
+           Built on equal-value complementaries: magenta and lime read
+           at nearly the same luminance, so the edge between them will
+           not resolve and appears to move. It is an optical effect, not
+           an animation — which is why it survives reduced-motion.
+           ------------------------------------------------------------ */
+        .theme-acid {
+            background: #6c00a8;
+            color: #ffe94a;
+            font-family: 'Unbounded', 'Inter', sans-serif;
+            position: relative;
+            overflow: hidden;
+            --ac-magenta: #d0009b;
+            --ac-lime: #9dff2e;
+            --ac-orange: #ff6a00;
+        }
+
+        .ac-rays {
+            position: absolute;
+            inset: -30%;
+            background: repeating-conic-gradient(from 0deg,
+                    var(--ac-magenta) 0deg 9deg,
+                    var(--ac-lime) 9deg 18deg);
+            opacity: .85;
+            pointer-events: none;
+        }
+
+        .ac-disc {
+            position: relative;
+            border-radius: 50%;
+            background:
+                radial-gradient(circle,
+                    var(--ac-orange) 0 34%,
+                    var(--ac-magenta) 34% 46%,
+                    var(--ac-lime) 46% 58%,
+                    #6c00a8 58% 70%,
+                    var(--ac-orange) 70% 100%);
+        }
+
+        /* The vibration: a complementary halo at zero blur. Any blur at
+           all and the edge resolves and the effect dies. */
+        .ac-type {
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: -.01em;
+            line-height: .92;
+            color: var(--ac-lime);
+            text-shadow: 2px 0 var(--ac-magenta), -2px 0 var(--ac-orange);
+        }
+
+        .ac-panel {
+            background: #2a0140;
+            border: 3px solid var(--ac-lime);
+            border-radius: 28px;
+            padding: 1.8rem;
+        }
+
+        .ac-btn {
+            background: var(--ac-orange);
+            color: #2a0140;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .1em;
+            font-size: .72rem;
+            padding: .8rem 1.6rem;
+            border: 3px solid #2a0140;
+            border-radius: 999px;
+            transition: transform .2s ease;
+        }
+
+        .ac-btn:hover {
+            transform: scale(1.06) rotate(-2deg);
+        }
+
+        /* ------------------------------------------------------------
+           41. SWISS PUNK / WEINGART
+           Concept H's grid is still here — that is the point. Every
+           violation below is measured against a grid that remains
+           visible underneath it, which is what separates this from
+           Concept Z's genuine chaos.
+           ------------------------------------------------------------ */
+        .theme-punk {
+            background: #e8e4dc;
+            color: #14213d;
+            font-family: 'Inter', system-ui, sans-serif;
+            position: relative;
+            --sp-blue: #1b4dd8;
+            --sp-orange: #ff6a13;
+        }
+
+        .sp-grid-bed {
+            position: absolute;
+            inset: 0;
+            background:
+                repeating-linear-gradient(90deg, rgba(20, 33, 61, .1) 0 1px, transparent 1px 68px),
+                repeating-linear-gradient(rgba(20, 33, 61, .06) 0 1px, transparent 1px 22px);
+            pointer-events: none;
+        }
+
+        /* Dot screen, enlarged past the point where it reads as tone —
+           the halftone becomes the image. */
+        .sp-halftone {
+            background-image: radial-gradient(var(--sp-blue) 32%, transparent 33%);
+            background-size: 11px 11px;
+            border-radius: 50%;
+        }
+
+        .sp-wide {
+            letter-spacing: .52em;
+            text-transform: uppercase;
+            font-size: .64rem;
+            font-weight: 600;
+        }
+
+        .sp-head {
+            font-weight: 800;
+            font-size: clamp(2.2rem, 7vw, 4.4rem);
+            line-height: .95;
+            letter-spacing: -.035em;
+            text-transform: uppercase;
+        }
+
+        /* Stepped baseline: each line shifted by a fixed grid unit, so
+           the break is legible as deliberate rather than broken. */
+        .sp-step>span {
+            display: block;
+        }
+
+        .sp-step>span:nth-child(2) {
+            margin-left: 68px;
+        }
+
+        .sp-step>span:nth-child(3) {
+            margin-left: 136px;
+            color: var(--sp-orange);
+        }
+
+        .sp-numeral {
+            font-weight: 800;
+            font-size: clamp(4rem, 16vw, 10rem);
+            line-height: .8;
+            letter-spacing: -.06em;
+            color: var(--sp-blue);
+        }
+
+        .sp-slab {
+            background: var(--sp-blue);
+            color: #e8e4dc;
+            padding: .3rem .7rem;
+            transform: rotate(-1.5deg);
+            display: inline-block;
+        }
+
+        .sp-panel {
+            background: #fdfcf8;
+            border: 1px solid rgba(20, 33, 61, .35);
+            padding: 1.5rem;
+        }
+
+        /* ------------------------------------------------------------
+           42. TELETEXT / CEEFAX
+           A 40x25 character grid and exactly eight colours, because that
+           is all the hardware had. Everything measures in ch and every
+           colour is a full-on RGB primary — no tints, no blends.
+           ------------------------------------------------------------ */
+        .theme-teletext {
+            background: #111;
+            color: #fff;
+            font-family: 'IBM Plex Mono', ui-monospace, monospace;
+            --tt-r: #f00;
+            --tt-g: #0f0;
+            --tt-y: #ff0;
+            --tt-b: #00f;
+            --tt-m: #f0f;
+            --tt-c: #0ff;
+        }
+
+        .tt-screen {
+            background: #000;
+            width: 100%;
+            max-width: 42ch;
+            padding: .6ch 1ch;
+            font-size: clamp(.66rem, 2.4vw, .95rem);
+            line-height: 1.24;
+            letter-spacing: .04em;
+        }
+
+        .tt-row {
+            display: flex;
+            justify-content: space-between;
+            white-space: pre;
+        }
+
+        /* Double-height rows are a real teletext control code: the top
+           half of the glyph on one row, stretched. */
+        .tt-dh {
+            display: block;
+            transform: scaleY(1.9);
+            transform-origin: top left;
+            margin-bottom: .95em;
+            font-weight: 600;
+        }
+
+        .tt-r {
+            color: var(--tt-r);
+        }
+
+        .tt-g {
+            color: var(--tt-g);
+        }
+
+        .tt-y {
+            color: var(--tt-y);
+        }
+
+        .tt-c {
+            color: var(--tt-c);
+        }
+
+        .tt-m {
+            color: var(--tt-m);
+        }
+
+        .tt-on-b {
+            background: var(--tt-b);
+            color: var(--tt-y);
+        }
+
+        .tt-on-r {
+            background: var(--tt-r);
+            color: #fff;
+        }
+
+        .tt-on-g {
+            background: var(--tt-g);
+            color: #000;
+        }
+
+        .tt-on-c {
+            background: var(--tt-c);
+            color: #000;
+        }
+
+        .tt-bezel {
+            background: #2b2b2b;
+            border-radius: 10px;
+            padding: 1.1rem;
+            box-shadow: inset 0 0 0 2px #3f3f3f;
+        }
+
+        /* ------------------------------------------------------------
+           43. ANSI / BBS DEMOSCENE
+           CP437 box-drawing on the EGA sixteen, locked to 80 columns.
+           The shade ramp is three literal characters, not opacity —
+           there was no alpha channel to fade with.
+           ------------------------------------------------------------ */
+        .theme-ansi {
+            background: #000080;
+            color: #aaa;
+            font-family: 'IBM Plex Mono', ui-monospace, monospace;
+            --an-cyan: #55ffff;
+            --an-bcyan: #00aaaa;
+            --an-white: #fff;
+            --an-grey: #aaa;
+            --an-yellow: #ff5;
+        }
+
+        /* IBM Plex Mono's box-drawing and shade glyphs do not join — the rules
+           come out broken and the ramp comes out patchy. The CP437 range needs
+           a face that actually ships it, so the art uses a system-mono stack
+           (Consolas / Menlo / DejaVu) ahead of the page's display mono. */
+        .an-cp437 {
+            font-family: Consolas, Menlo, 'DejaVu Sans Mono', 'Liberation Mono',
+                'Courier New', ui-monospace, monospace;
+        }
+
+        .an-screen {
+            background: #0000aa;
+            border: 3px double var(--an-cyan);
+            padding: 1.1rem 1.3rem;
+            font-size: clamp(.6rem, 2.1vw, .85rem);
+            line-height: 1.3;
+            white-space: pre;
+            overflow-x: auto;
+        }
+
+        .an-art {
+            color: var(--an-cyan);
+            line-height: 1.02;
+            letter-spacing: 0;
+            white-space: pre;
+        }
+
+        .an-c {
+            color: var(--an-cyan);
+        }
+
+        .an-w {
+            color: var(--an-white);
+        }
+
+        .an-y {
+            color: var(--an-yellow);
+        }
+
+        .an-dim {
+            color: var(--an-bcyan);
+        }
+
+        .an-panel {
+            border: 1px solid var(--an-bcyan);
+            padding: .9rem 1.1rem;
+        }
+
+        .an-key {
+            background: var(--an-cyan);
+            color: #0000aa;
+            padding: 0 .4ch;
+            font-weight: 600;
+        }
+
         /* ============================================================
            ==========  EXPERIMENTAL — EXP-01 … EXP-10  ================
            Series I and II each let the whole section adopt the theme.
@@ -2438,7 +3059,7 @@
             background: rgba(6, 8, 12, .42);
         }
 
-        /* backdrop-filter only while hot: 36 always-on filter layers on a
+        /* backdrop-filter only while hot: 43 always-on filter layers on a
            page this long is a real cost, and an invisible one is pure waste. */
         .seg.is-hot .seg-veil {
             opacity: 1;
@@ -2602,9 +3223,12 @@
         1. Introduction: Setting the context of 'Design X'.
         2. Section X: Analysis of image_314403.png (The Baseline).
         3. The Spectrum (A-Z): Discrete sections where the background and component styles transform to match the design concept.
-        4. Series II (27-36): Three clusters the A-Z run omitted — current-generation material languages
+        4. Series II (27-43): Five clusters the A-Z run omitted — current-generation material languages
            (Liquid Glass, Spatial, AI-Native, Kinetic Type), pre-digital movements (true Skeuomorphism,
-           Bauhaus, Art Deco), and production patterns (Accessibility-First, Editorial, Design System).
+           Bauhaus, Art Deco), production patterns (Accessibility-First, Editorial, Design System),
+           a second run of movements (Art Nouveau, Constructivism, De Stijl, Psychedelic, Swiss Punk),
+           and the character-cell aesthetics that were hardware limits before they were styles
+           (Teletext, ANSI/BBS).
         5. Analytical Synthesis: Data visualizations comparing the designs.
         Each segment is self-contained: its palette, type, geometry, motion and interaction model all derive
         from the concept it documents, so the page can be *felt* rather than only read.
@@ -2664,6 +3288,13 @@
                 <a href="#a11y" class="hover:text-slate-900 transition whitespace-nowrap">34: Accessible</a>
                 <a href="#editorial" class="hover:text-slate-900 transition whitespace-nowrap">35: Editorial</a>
                 <a href="#designsystem" class="hover:text-slate-900 transition whitespace-nowrap">36: Design System</a>
+                <a href="#nouveau" class="hover:text-slate-900 transition whitespace-nowrap">37: Art Nouveau</a>
+                <a href="#konstrukt" class="hover:text-slate-900 transition whitespace-nowrap">38: Constructivism</a>
+                <a href="#stijl" class="hover:text-slate-900 transition whitespace-nowrap">39: De Stijl</a>
+                <a href="#psychedelic" class="hover:text-slate-900 transition whitespace-nowrap">40: Psychedelic</a>
+                <a href="#swisspunk" class="hover:text-slate-900 transition whitespace-nowrap">41: Swiss Punk</a>
+                <a href="#teletext" class="hover:text-slate-900 transition whitespace-nowrap">42: Teletext</a>
+                <a href="#bbs" class="hover:text-slate-900 transition whitespace-nowrap">43: ANSI / BBS</a>
                 <span class="nav-div">EXPERIMENTAL</span>
                 <a href="#experimental" class="hover:text-slate-900 transition whitespace-nowrap">EXP: The Voyage</a>
             </div>
@@ -3101,13 +3732,29 @@
                     squiggles, polka dots, terrazzo chips and clashing pastels across the canvas to create a playful,
                     energetic layout that rejects strict modernist rules.
                 </p>
-                <div class="flex gap-3 flex-wrap">
+                <div class="flex gap-3 flex-wrap mb-8">
                     <span
                         class="px-3 py-1 bg-cyan-300 border-2 border-black font-bold text-sm rotate-[-3deg]">Squiggle</span>
                     <span
                         class="px-3 py-1 bg-pink-300 border-2 border-black font-bold text-sm rotate-[2deg]">Terrazzo</span>
                     <span class="px-3 py-1 bg-yellow-300 border-2 border-black font-bold text-sm rotate-[-1deg]">Grid
                         Rejection</span>
+                </div>
+
+                <!-- Memphis is usually shown as decoration. It survives as a
+                     brand system too, and the rules change when it does:
+                     the scatter goes to the margins and the type carries the
+                     clash instead. -->
+                <div class="bg-yellow-300 border-4 border-black p-5">
+                    <p class="text-xs font-black uppercase tracking-widest mb-3">Applied as a brand system</p>
+                    <p class="text-3xl font-black leading-none mb-3">WE MAKE<br>
+                        <span class="text-pink-500">UGLY</span> BEAUTIFUL<span class="text-cyan-400">.</span>
+                    </p>
+                    <p class="text-sm font-bold mb-4">One word of the headline takes a clash colour. That single
+                        substitution does more brand work than the whole scatter layer.</p>
+                    <button type="button"
+                        class="bg-orange-400 border-2 border-black font-black text-xs uppercase tracking-widest px-4 py-2 shadow-[4px_4px_0px_#000]">Get
+                        started</button>
                 </div>
             </div>
             <div class="flex justify-center">
@@ -3510,6 +4157,25 @@
                     layouts. It deliberately breaks UX rules to force attention and convey raw, unfiltered
                     counter-culture energy.
                 </p>
+
+                <!-- The ransom note is only half the language. The other half
+                     is the copier itself: a third-generation copy has no
+                     midtones, so every image blows out to a 1-bit screen. -->
+                <div class="mt-8 flex items-stretch gap-4">
+                    <div class="zine-halftone border-4 border-black w-28 shrink-0"
+                        style="background:linear-gradient(135deg,#111 0 38%,#bbb 38% 62%,#111 62%)" aria-hidden="true">
+                    </div>
+                    <div>
+                        <p class="zine-spot inline-block px-3 py-1 text-xs font-black uppercase tracking-widest mb-3">
+                            One spot colour, second pass</p>
+                        <p class="text-sm font-bold leading-snug">
+                            No midtones survive the copier. Images blow out to a coarse 1-bit dot screen, and colour
+                            only exists where a second machine ran a second pass — which is why it is always one flat
+                            ink, never a palette.
+                        </p>
+                    </div>
+                </div>
+
                 <p class="mt-6 text-xs uppercase tracking-widest">Photocopied · Stapled · Distributed by hand</p>
             </div>
             <div class="flex justify-center transform rotate-3">
@@ -3520,7 +4186,7 @@
     </section>
 
     <!-- ============================================================
-         SERIES II — CONCEPTS 27-36
+         SERIES II — CONCEPTS 27-43
          ============================================================ -->
     <section class="series-band py-20 px-6">
         <div class="max-w-4xl mx-auto text-center">
@@ -3528,9 +4194,10 @@
             <h2 class="text-sm uppercase tracking-[0.35em] text-slate-400 mb-4">Series II</h2>
             <h3 class="text-4xl md:text-5xl font-extrabold mb-6 tracking-tight">The Gaps in A&ndash;Z</h3>
             <p class="text-lg text-slate-300 leading-relaxed mb-8">
-                The first series mapped aesthetics densely but left three clusters empty: the material languages that
-                shipped after it was written, the pre-digital art movements it skipped, and the unglamorous production
-                patterns that most real interfaces are actually built from.
+                The first series mapped aesthetics densely but left whole regions empty: the material languages that
+                shipped after it was written, the pre-digital art movements it skipped, the unglamorous production
+                patterns most real interfaces are actually built from &mdash; and the styles that were never taste at
+                all, but the shape a piece of hardware forced on everyone using it.
             </p>
             <div class="grid sm:grid-cols-3 gap-4 text-left text-sm">
                 <div class="border border-slate-700 rounded-xl p-4">
@@ -3547,6 +4214,18 @@
                     <div class="text-xs uppercase tracking-widest text-slate-500 mb-1">34&ndash;36</div>
                     <div class="font-bold mb-1">Practical</div>
                     <p class="text-slate-400">Patterns judged on shipped outcomes, not on mood.</p>
+                </div>
+                <div class="border border-slate-700 rounded-xl p-4">
+                    <div class="text-xs uppercase tracking-widest text-slate-500 mb-1">37&ndash;41</div>
+                    <div class="font-bold mb-1">Further Movements</div>
+                    <p class="text-slate-400">The art-historical seam 31&ndash;33 only opened: ornament, revolution,
+                        and the deliberate rupture of the grid.</p>
+                </div>
+                <div class="border border-slate-700 rounded-xl p-4">
+                    <div class="text-xs uppercase tracking-widest text-slate-500 mb-1">42&ndash;43</div>
+                    <div class="font-bold mb-1">Character-Cell</div>
+                    <p class="text-slate-400">Aesthetics that are really hardware constraints &mdash; fixed grids,
+                        fixed palettes, no alpha channel.</p>
                 </div>
             </div>
             <div class="rule mt-8"></div>
@@ -4006,6 +4685,351 @@
                 <h4 class="font-bold mb-1">Landing page in this style</h4>
                 <p class="text-xs text-slate-500 mb-4">Annotated with the tokens it resolves from.</p>
                 <canvas id="canvasDS" width="320" height="240" class="rounded-lg border border-slate-200"></canvas>
+            </div>
+        </div>
+    </section>
+
+    <!-- CONCEPT 37: JUGENDSTIL / ART NOUVEAU -->
+    <section id="nouveau" class="theme-nouveau py-28 px-6">
+        <div class="max-w-6xl mx-auto reveal">
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="nv-eyebrow">Concept 37 &mdash; Movements</h2>
+                <span class="nv-eyebrow hidden sm:block">Paris &middot; 1896</span>
+            </div>
+            <div class="nv-rule mb-8"></div>
+            <h3 class="nv-display text-5xl md:text-7xl mb-4">Jugendstil</h3>
+            <p class="nv-eyebrow mb-10">Art Nouveau &middot; after Mucha</p>
+
+            <div class="grid md:grid-cols-2 gap-14 items-center">
+                <div>
+                    <p class="text-lg leading-relaxed mb-6 nv-drop">
+                        Ornament here is not applied to a layout &mdash; it <em>is</em> the layout. The arch defines the
+                        panel, the whiplash line carries the eye between blocks, and the hairline frame does the work
+                        a border-radius would do in any other concept. Remove the ornament and there is no
+                        composition left underneath it.
+                    </p>
+                    <p class="text-sm leading-relaxed opacity-80 mb-8">
+                        The palette is deliberately tertiary &mdash; ivory, ochre, sage, faded rose &mdash; because the
+                        style's contrast comes from line weight, not from hue. That is also its cost: at hairline
+                        weights on cream, the gold sits close to the contrast floor, so it may carry structure but
+                        never body text.
+                    </p>
+                    <div class="flex items-center gap-4 mb-8">
+                        <span class="nv-lozenge"></span>
+                        <span class="nv-eyebrow">Ornament as structure</span>
+                        <span class="nv-lozenge"></span>
+                    </div>
+                    <button class="nv-btn" type="button">Entrez</button>
+                </div>
+
+                <div>
+                    <!-- The decorative panel is drawn entirely from borders and
+                         radii; no imagery is fetched anywhere on this page. -->
+                    <div class="nv-arch p-8 pt-14 mb-8">
+                        <div class="nv-whip mb-6"></div>
+                        <p class="nv-display text-center text-3xl mb-2">Maison</p>
+                        <p class="nv-eyebrow text-center mb-6">Saison MDCCCXCVI</p>
+                        <div class="nv-rule"></div>
+                    </div>
+                    <div class="nv-frame">
+                        <div class="p-5">
+                            <p class="nv-eyebrow mb-3">Landing page in this style</p>
+                            <canvas id="canvasNV" width="320" height="240" class="w-full"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CONCEPT 38: SOVIET CONSTRUCTIVISM -->
+    <section id="konstrukt" class="theme-konstrukt pt-52 pb-28 px-6">
+        <span class="kn-wedge" aria-hidden="true"></span>
+        <span class="kn-rule" style="top:90px;transform:rotate(-14deg)" aria-hidden="true"></span>
+        <span class="kn-rule" style="top:78%;transform:rotate(-9deg)" aria-hidden="true"></span>
+        <div class="max-w-6xl mx-auto relative z-10 reveal">
+            <div class="flex items-start justify-between mb-6">
+                <h2 class="kn-micro">Concept 38 &mdash; Movements</h2>
+                <span class="kn-micro hidden sm:block">Independent Design Bureau &middot; No. 03</span>
+            </div>
+
+            <h3 class="mb-2">
+                <span class="kn-head">Kon</span><br>
+                <span class="kn-head kn-red" style="margin-left:1.2em">Strukt</span>
+            </h3>
+            <p class="kn-micro mb-12" style="margin-left:1.2em">Form follows <span class="kn-red">force</span>.</p>
+
+            <div class="grid md:grid-cols-3 gap-8 items-start">
+                <div class="kn-card md:col-span-2">
+                    <p class="text-lg leading-relaxed mb-6">
+                        The 1920s Soviet poster refused the orthogonal because the orthogonal was the language of the
+                        thing it was arguing against. Type runs on the diagonal, rules cut the frame and keep going,
+                        and the only colours permitted are red, black and the paper.
+                    </p>
+                    <p class="text-sm leading-relaxed mb-6">
+                        <strong>Concept 32</strong> (Bauhaus) is its contemporary and its opposite number: same
+                        primitives, same faith in geometry, but Bauhaus builds a stable grid where Constructivism
+                        builds a lever. Where Bauhaus is a school, this is a printing press with an argument.
+                    </p>
+                    <div class="flex flex-wrap gap-3">
+                        <button class="kn-btn" type="button">Deploy</button>
+                        <span class="kn-micro self-center">&larr; one action, one colour, no second option</span>
+                    </div>
+                </div>
+                <div class="kn-tilt">
+                    <div class="kn-card p-3">
+                        <p class="kn-micro mb-2">Landing page &middot; this style</p>
+                        <canvas id="canvasKN" width="320" height="240" class="w-full"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CONCEPT 39: DE STIJL / NEOPLASTICISM -->
+    <section id="stijl" class="theme-stijl py-28 px-6">
+        <div class="max-w-6xl mx-auto reveal">
+            <h2 class="st-label mb-3">Concept 39 &mdash; Movements</h2>
+            <h3 class="st-head mb-3">Huis</h3>
+            <p class="st-label mb-12">De Stijl &middot; Neoplasticism &middot; 1917</p>
+
+            <!-- The rules are the grid gap over a black ground, which is why
+                 every junction lands exactly and no rule stops short. -->
+            <div class="st-grid mb-10" style="grid-template-columns:repeat(4,1fr)">
+                <div class="st-cell st-red" style="grid-column:span 2">
+                    <p class="font-bold text-2xl leading-none">Form is space.</p>
+                </div>
+                <div class="st-cell st-yellow"></div>
+                <div class="st-cell"></div>
+                <div class="st-cell st-black" style="grid-row:span 2">
+                    <p class="st-label">Rule<br>as<br>structure</p>
+                </div>
+                <div class="st-cell" style="grid-column:span 2">
+                    <p class="font-bold text-2xl leading-none">Space is form.</p>
+                </div>
+                <div class="st-cell st-blue"></div>
+                <div class="st-cell st-blue"></div>
+                <div class="st-cell"></div>
+                <div class="st-cell st-yellow" style="grid-column:span 2"></div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-10 items-center">
+                <div>
+                    <p class="text-lg leading-relaxed mb-6">
+                        Three restrictions and nothing else: only horizontals and verticals, only the three primaries
+                        plus black, white and grey, and never symmetry. Balance is achieved by weight rather than by
+                        mirroring &mdash; a small red block far from centre answers a large white one near it.
+                    </p>
+                    <p class="text-sm leading-relaxed opacity-70">
+                        It is the most constrained language on this page, and the constraint is what makes it
+                        instantly legible. Add a diagonal, a curve or a fourth hue and the whole thing reads as
+                        generic modernism.
+                    </p>
+                </div>
+                <div class="st-grid" style="grid-template-columns:1fr">
+                    <div class="st-cell" style="display:block">
+                        <p class="st-label mb-3">Landing page in this style</p>
+                        <canvas id="canvasST" width="320" height="240" class="w-full"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CONCEPT 40: PSYCHEDELIC / MOSCOSO -->
+    <section id="psychedelic" class="theme-acid py-28 px-6">
+        <div class="ac-rays" aria-hidden="true"></div>
+        <div class="max-w-6xl mx-auto relative z-10 reveal">
+            <!-- The concept's own rule: anything that must be read sits on an
+                 opaque panel, never on the vibrating field. That includes the
+                 labels — on the rays they are illegible. -->
+            <h2 class="text-xs font-bold uppercase tracking-[0.3em] mb-3"><span
+                    class="bg-[#2a0140] text-[#9dff2e] inline-block px-3 py-1">Concept 40 &mdash; Movements</span></h2>
+            <h3 class="ac-type text-5xl md:text-7xl mb-3">Neon Rose</h3>
+            <p class="text-sm uppercase tracking-[0.25em] mb-12"><span
+                    class="bg-[#2a0140] text-[#ffe94a] inline-block px-3 py-1">Psychedelic &middot; after Moscoso
+                    &middot; SF 1967</span></p>
+
+            <div class="grid md:grid-cols-2 gap-12 items-center">
+                <div class="ac-panel">
+                    <p class="text-base leading-relaxed mb-5 text-[#ffe94a]">
+                        The whole style rests on one perceptual trick: place two saturated complementaries at the same
+                        <em>luminance</em> and the eye cannot resolve the edge between them, so it appears to shimmer.
+                        Magenta against lime does this; magenta against white does not.
+                    </p>
+                    <p class="text-sm leading-relaxed mb-5 text-[#9dff2e]">
+                        Legibility is spent on purpose. A concert poster only has to be readable long enough to make
+                        you walk over to it, and the difficulty was the invitation.
+                    </p>
+                    <p class="text-xs leading-relaxed text-[#ffe94a] opacity-80">
+                        On a screen that trade is far more expensive than it was on a wall. Confine the vibration to
+                        display type, keep body copy on this flat panel, and the effect survives contact with
+                        <strong>Concept 34</strong>.
+                    </p>
+                    <div class="mt-6">
+                        <button class="ac-btn" type="button">Doors at eight</button>
+                    </div>
+                </div>
+                <div class="flex justify-center">
+                    <div class="ac-disc p-10 md:p-14">
+                        <div class="bg-[#2a0140] rounded-full p-6 border-4 border-[#ff6a00]">
+                            <p class="ac-type text-center text-2xl md:text-3xl mb-1">Neon</p>
+                            <p class="ac-type text-center text-2xl md:text-3xl">Rose</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="ac-panel mt-12 max-w-md">
+                <p class="text-xs uppercase tracking-[0.25em] mb-4 text-[#9dff2e]">Landing page in this style</p>
+                <canvas id="canvasPS" width="320" height="240" class="w-full rounded-xl"></canvas>
+            </div>
+        </div>
+    </section>
+
+    <!-- CONCEPT 41: SWISS PUNK / WEINGART -->
+    <section id="swisspunk" class="theme-punk py-28 px-6">
+        <div class="sp-grid-bed" aria-hidden="true"></div>
+        <div class="max-w-6xl mx-auto relative z-10 reveal">
+            <div class="flex flex-wrap items-baseline justify-between gap-4 mb-8">
+                <h2 class="sp-wide">Concept 41 &mdash; Movements</h2>
+                <span class="sp-wide">Basel &middot; Dezember 1972</span>
+            </div>
+
+            <h3 class="sp-head sp-step mb-10">
+                <span>Typografische</span>
+                <span>Monats&shy;blätter</span>
+                <span>Swiss Punk</span>
+            </h3>
+
+            <div class="grid md:grid-cols-3 gap-10 items-start">
+                <div class="md:col-span-2">
+                    <div class="flex items-start gap-8 mb-8">
+                        <span class="sp-numeral">001</span>
+                        <div class="sp-halftone shrink-0" style="width:120px;height:120px" aria-hidden="true"></div>
+                    </div>
+                    <div class="sp-panel">
+                        <p class="text-lg leading-relaxed mb-6">
+                            Weingart taught inside the Swiss school and then spent a career pulling it apart. The grid
+                            of <strong>Concept H</strong> is still underneath everything here &mdash; you can see it
+                            behind this text &mdash; but baselines step, letterspacing opens past legibility, and
+                            halftone screens are enlarged until the dots stop being tone and become the image.
+                        </p>
+                        <p class="text-sm leading-relaxed opacity-80">
+                            This is what separates it from <strong>Concept Z</strong>. Zine chaos has no grid to
+                            violate; Swiss Punk is legible <em>as</em> a violation, and every offset is a whole number
+                            of grid units. Break the grid at random and you get neither style.
+                        </p>
+                        <p class="sp-wide mt-6"><span class="sp-slab">Rupture, measured</span></p>
+                    </div>
+                </div>
+                <div class="sp-panel">
+                    <p class="sp-wide mb-4">Landing page</p>
+                    <canvas id="canvasWG" width="320" height="240" class="w-full"></canvas>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CONCEPT 42: TELETEXT / CEEFAX -->
+    <section id="teletext" class="theme-teletext py-28 px-6">
+        <div class="max-w-6xl mx-auto reveal">
+            <h2 class="tt-c text-xs uppercase tracking-[0.3em] mb-3">Concept 42 &mdash; Character-Cell</h2>
+            <h3 class="text-4xl md:text-6xl font-semibold mb-3 tt-y">Teletext / Ceefax</h3>
+            <p class="text-sm mb-12 text-neutral-400">Broadcast 1974 &middot; 40&times;25 cells &middot; 8 colours
+                &middot; no alpha, no antialiasing</p>
+
+            <div class="grid lg:grid-cols-2 gap-12 items-start">
+                <div class="tt-bezel">
+                    <div class="tt-screen">
+                        <!-- white-space:pre is on, so these spans must stay on
+                             one source line or the indentation ships as content. -->
+                        <div class="tt-row mb-1"><span class="tt-c">P100 SPECTRUM</span><span class="tt-y">MON 11 AUG 19:04</span></div>
+                        <div class="tt-on-b px-1 mb-1"><span class="tt-dh">SPECTRUM TIMES</span></div>
+                        <div class="tt-on-r px-1 mb-1">FORTY COLUMNS IS NOT A LIMITATION</div>
+                        <div class="tt-on-g px-1 mb-2">IT IS THE ENTIRE DESIGN SYSTEM</div>
+                        <div class="tt-row"><span class="tt-y">TODAY'S PAGES</span><span class="tt-g">102</span></div>
+                        <div class="tt-row"><span class="tt-c"> NEWS ................</span><span class="tt-c">104</span></div>
+                        <div class="tt-row"><span class="tt-c"> WEATHER .............</span><span class="tt-c">131</span></div>
+                        <div class="tt-row mb-2"><span class="tt-c"> INDEX ...............</span><span class="tt-c">100</span></div>
+                        <div class="tt-on-c px-1 mb-1">WEATHER      18C  SUNNY</div>
+                        <div class="tt-row" aria-hidden="true"><span class="tt-m">&#9600;&#9600;&#9600;&#9600;&#9604;&#9604;&#9604;</span><span class="tt-g">&#9608;&#9608;&#9608;</span><span class="tt-y">&#9600;&#9600;&#9600;&#9604;&#9604;</span></div>
+                        <div class="tt-row mt-2"><span class="tt-r">RED</span><span class="tt-g">GREEN</span><span class="tt-y">YELLOW</span><span class="tt-c">CYAN</span></div>
+                    </div>
+                </div>
+
+                <div>
+                    <p class="text-lg leading-relaxed mb-6 text-neutral-200">
+                        Every constraint in this style is a hardware fact. Eight colours because the signal carried
+                        three bits. Blocky mosaics because the character ROM had no curves. Double-height headlines
+                        because a control code could stretch a row, and nothing finer existed.
+                    </p>
+                    <p class="text-sm leading-relaxed mb-6 text-neutral-400">
+                        That is exactly why it still works as a design language: the restrictions were never taste, so
+                        they never dated. Snap everything to the character cell, refuse tints and blends, and the
+                        result is coherent without a single judgement call.
+                    </p>
+                    <p class="text-sm leading-relaxed text-neutral-400">
+                        The trap is the palette. Pure blue on black and pure red on black both fail body-size
+                        contrast, and the original medium got away with it at a viewing distance no monitor has.
+                        Keep white, yellow and cyan for anything that must be read.
+                    </p>
+                    <div class="tt-bezel mt-8 inline-block">
+                        <p class="tt-c text-xs uppercase tracking-[0.25em] mb-3">Landing page in this style</p>
+                        <canvas id="canvasTX" width="320" height="240" class="w-full"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CONCEPT 43: ANSI / BBS DEMOSCENE -->
+    <section id="bbs" class="theme-ansi py-28 px-6">
+        <div class="max-w-6xl mx-auto reveal">
+            <h2 class="an-c text-xs uppercase tracking-[0.3em] mb-3">Concept 43 &mdash; Character-Cell</h2>
+            <h3 class="text-4xl md:text-6xl font-semibold mb-3 an-w">ANSI / BBS Art</h3>
+            <p class="text-sm mb-12 an-dim">CP437 &middot; EGA sixteen &middot; 80 columns &middot; dial-up, 1988</p>
+
+            <div class="grid lg:grid-cols-2 gap-12 items-start">
+                <div class="an-screen an-cp437"><!--
+                     Three rows, not two: in a two-row block alphabet E and C
+                     are the same glyph, and a wordmark you cannot read defeats
+                     the whole point of drawing with characters. -->
+                    <pre class="an-art" role="img" aria-label="SPECTRUM, drawn in block characters">&#9608;&#9600;&#9600; &#9608;&#9600;&#9600;&#9608; &#9608;&#9600;&#9600; &#9608;&#9600;&#9600; &#9600;&#9608;&#9600; &#9608;&#9600;&#9600;&#9608; &#9608;  &#9608; &#9608;&#9604; &#9604;&#9608;
+&#9600;&#9600;&#9608; &#9608;&#9604;&#9604;&#9608; &#9608;&#9600;&#9600; &#9608;    &#9608;  &#9608;&#9604;&#9604;&#9600; &#9608;  &#9608; &#9608; &#9600; &#9608;
+&#9600;&#9600;&#9600; &#9608;    &#9600;&#9600;&#9600; &#9600;&#9600;&#9600;  &#9600;  &#9608;  &#9600; &#9600;&#9600;&#9600;&#9600; &#9600;   &#9600;</pre>
+                    <div class="an-dim mt-3">&#9556;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9559;</div>
+                    <div class="an-dim">&#9553;<span class="an-w"> SPECTRUM BBS &middot; 2400 BAUD &middot; 3 NODES </span>&#9553;</div>
+                    <div class="an-dim">&#9562;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9552;&#9565;</div>
+                    <div class="mt-4"><span class="an-key">M</span><span class="an-c"> MESSAGE BASES    </span><span class="an-dim">1,204 posts</span></div>
+                    <div><span class="an-key">F</span><span class="an-c"> FILE AREAS       </span><span class="an-dim">  842 files</span></div>
+                    <div><span class="an-key">D</span><span class="an-c"> DOOR GAMES       </span><span class="an-dim">   17 doors</span></div>
+                    <div class="mt-4"><span class="an-y">&#9617;&#9617;&#9617;&#9618;&#9618;&#9618;&#9619;&#9619;&#9619;&#9608;&#9608;&#9608;</span><span class="an-dim">  shade ramp: three characters, no alpha</span></div>
+                    <div class="mt-3"><span class="an-c">Command?</span> <span class="an-w">_</span></div>
+                </div>
+
+                <div>
+                    <p class="text-lg leading-relaxed mb-6 an-w">
+                        The demoscene took the same character-cell constraint as <strong>Concept 42</strong> and drew
+                        pictures with it anyway. Gradients are three shade glyphs &mdash; light, medium, dark &mdash;
+                        because there was no alpha to fade with, and the whole palette is the sixteen EGA colours on
+                        a blue field nobody chose but everybody kept.
+                    </p>
+                    <p class="text-sm leading-relaxed mb-6 an-dim">
+                        Where <strong>Concept T</strong> borrows the terminal as a mood, this is the terminal used as
+                        a canvas: the ornament, the logo and the menu are all made of the same characters as the
+                        text, at exactly the same cell size.
+                    </p>
+                    <p class="text-sm leading-relaxed an-dim">
+                        Reproduce it in a browser by locking to a monospace stack, measuring every width in
+                        <code>ch</code>, and letting long art scroll horizontally rather than reflow. Reflowed ANSI
+                        is destroyed ANSI.
+                    </p>
+                    <div class="an-panel mt-8">
+                        <p class="an-c text-xs uppercase tracking-[0.25em] mb-3">Landing page in this style</p>
+                        <canvas id="canvasBB" width="320" height="240" class="w-full"></canvas>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
@@ -5321,6 +6345,182 @@
                         ctx.fillStyle = c; ctx.fillRect(238 + i * 13, 222, 12, 10);
                     });
                 }
+            },
+
+            /* 37 — Art Nouveau: the ornament is the frame */
+            canvasNV: {
+                bg: '#f7f1e3', surface: '#fdfaf2', navBg: '#f7f1e3', cardBg: '#fdfaf2',
+                ink: '#3b3227', inkSoft: '#9a8a6d', accent: '#a9884f', accent2: '#8d9b7a',
+                radius: 0, btnRadius: 0, border: 1, borderColor: '#c8ae7c', headRadius: 0,
+                over: (ctx, W, H) => {
+                    ctx.strokeStyle = '#a9884f'; ctx.lineWidth = 1;
+                    // hairline frame, inset — the border that holds the page
+                    ctx.strokeRect(7.5, 34.5, W - 15, H - 42);
+                    // arched cap over the hero, the Mucha panel in miniature
+                    ctx.beginPath();
+                    ctx.arc(113, 62, 93, Math.PI * 1.08, Math.PI * 1.92);
+                    ctx.stroke();
+                    // whiplash: two unequal arcs meeting off-centre
+                    ctx.beginPath();
+                    ctx.moveTo(20, 150);
+                    ctx.bezierCurveTo(70, 128, 96, 176, 150, 150);
+                    ctx.bezierCurveTo(204, 124, 240, 168, 300, 146);
+                    ctx.stroke();
+                    // corner lozenges
+                    ctx.fillStyle = '#a9884f';
+                    [[16, 43], [304, 43], [16, 231], [304, 231]].forEach(([x, y]) => {
+                        ctx.save(); ctx.translate(x, y); ctx.rotate(Math.PI / 4);
+                        ctx.fillRect(-3, -3, 6, 6); ctx.restore();
+                    });
+                }
+            },
+
+            /* 38 — Constructivism: the diagonal cuts the frame */
+            canvasKN: {
+                bg: '#efeae1', surface: '#fdfcfa', navBg: '#efeae1', cardBg: '#fdfcfa',
+                ink: '#111111', inkSoft: '#6d675e', accent: '#d4232a', accent2: '#111111',
+                radius: 0, btnRadius: 0, border: 2, borderColor: '#111', headRadius: 0,
+                navBar: false,
+                under: (ctx, W, H) => {
+                    // the black wedge goes *under* the content, so type sits on it
+                    ctx.fillStyle = '#111';
+                    ctx.beginPath();
+                    ctx.moveTo(0, 18); ctx.lineTo(W, 62); ctx.lineTo(W, 96); ctx.lineTo(0, 52);
+                    ctx.closePath(); ctx.fill();
+                },
+                over: (ctx, W, H) => {
+                    // rules that run off both edges — the frame is a crop, not a boundary
+                    ctx.strokeStyle = '#d4232a'; ctx.lineWidth = 3;
+                    [[-10, 128, 340, 96], [-10, 214, 340, 190]].forEach(([x0, y0, x1, y1]) => {
+                        ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+                    });
+                    // the hero headline re-set on the diagonal
+                    ctx.save();
+                    ctx.translate(20, 52); ctx.rotate(-0.115);
+                    lpBar(ctx, 0, 0, 186, 14, '#efeae1', 0);
+                    lpBar(ctx, 0, 19, 132, 14, '#d4232a', 0);
+                    ctx.restore();
+                }
+            },
+
+            /* 39 — De Stijl: rules as ground, primaries as fill */
+            canvasST: {
+                bg: '#ffffff', surface: '#ffffff', navBg: '#ffffff', cardBg: '#ffffff',
+                ink: '#111111', inkSoft: '#8b8b8b', accent: '#c8102e', accent2: '#0b4ea2',
+                radius: 0, btnRadius: 0, border: 4, borderColor: '#111', headRadius: 0,
+                over: (ctx, W, H) => {
+                    // primaries snapped onto the card grid, never overlapping a rule
+                    ctx.fillStyle = '#f2c200'; ctx.fillRect(212, 160, 88, 52);
+                    ctx.fillStyle = '#0b4ea2'; ctx.fillRect(116, 186, 88, 26);
+                    ctx.fillStyle = '#c8102e'; ctx.fillRect(232, 50, 68, 48);
+                    // the black rules: full-bleed, never stopping short
+                    ctx.fillStyle = '#111';
+                    [[0, 44, W, 5], [0, 152, W, 5], [206, 0, 5, H], [110, 152, 5, 88]]
+                        .forEach(([x, y, w, h]) => ctx.fillRect(x, y, w, h));
+                }
+            },
+
+            /* 40 — Psychedelic: equal-value complementaries, drawn not animated */
+            canvasPS: {
+                surface: '#2a0140', surface2: '#6c00a8', navBg: '#2a0140', cardBg: '#2a0140',
+                ink: '#9dff2e', inkSoft: '#ffe94a', accent: '#ff6a00', accent2: '#d0009b',
+                radius: 14, btnRadius: 999, border: 2, borderColor: '#9dff2e',
+                bgFn: (ctx, W, H) => {
+                    ctx.fillStyle = '#6c00a8'; ctx.fillRect(0, 0, W, H);
+                    // sunburst from a rotate loop, same technique as canvasDC
+                    ctx.save(); ctx.translate(W / 2, H / 2);
+                    for (let i = 0; i < 36; i++) {
+                        ctx.rotate(Math.PI / 18);
+                        ctx.fillStyle = i % 2 ? '#d0009b' : '#9dff2e';
+                        ctx.fillRect(0, 0, 260, 26);
+                    }
+                    ctx.restore();
+                },
+                over: (ctx, W, H) => {
+                    // concentric rings behind the hero — the poster's optical centre
+                    ctx.save();
+                    ctx.globalAlpha = .9;
+                    [[46, '#ff6a00'], [34, '#d0009b'], [22, '#9dff2e'], [11, '#2a0140']]
+                        .forEach(([r, c]) => {
+                            ctx.fillStyle = c;
+                            ctx.beginPath(); ctx.arc(264, 62, r, 0, 6.284); ctx.fill();
+                        });
+                    ctx.restore();
+                }
+            },
+
+            /* 41 — Swiss Punk: the grid is visible, then violated by whole units */
+            canvasWG: {
+                bg: '#e8e4dc', surface: '#fdfcf8', navBg: '#e8e4dc', cardBg: '#fdfcf8',
+                ink: '#14213d', inkSoft: '#7c8296', accent: '#1b4dd8', accent2: '#ff6a13',
+                radius: 0, btnRadius: 0, border: 1, borderColor: '#14213d', headRadius: 0,
+                under: (ctx, W, H) => {
+                    // the grid it is arguing with, left visible on purpose
+                    ctx.strokeStyle = 'rgba(20,33,61,.13)'; ctx.lineWidth = 1;
+                    for (let x = 20; x < W; x += 34) {
+                        ctx.beginPath(); ctx.moveTo(x + .5, 0); ctx.lineTo(x + .5, H); ctx.stroke();
+                    }
+                },
+                over: (ctx, W, H) => {
+                    // enlarged halftone: the dots stop being tone and become the image
+                    ctx.save();
+                    ctx.beginPath(); ctx.arc(258, 74, 44, 0, 6.284); ctx.clip();
+                    ctx.fillStyle = '#1b4dd8';
+                    for (let y = 30; y < 120; y += 7)
+                        for (let x = 210; x < 306; x += 7) {
+                            ctx.beginPath(); ctx.arc(x, y, 2.2, 0, 6.284); ctx.fill();
+                        }
+                    ctx.restore();
+                    // second hero line stepped one whole grid unit right, in the second accent
+                    ctx.fillStyle = '#e8e4dc'; ctx.fillRect(18, 67, 140, 18);
+                    lpBar(ctx, 54, 69, 132, 14, '#ff6a13', 0);
+                }
+            },
+
+            /* 42 — Teletext: eight colours, everything on the character cell */
+            canvasTX: {
+                bg: '#000000', surface: '#0000ff', surface2: '#000000', navBg: '#0000ff',
+                cardBg: '#000000', ink: '#ffff00', inkSoft: '#00ffff', accent: '#ff0000',
+                accent2: '#00ff00',
+                radius: 0, btnRadius: 0, headRadius: 0, border: 0,
+                over: (ctx, W, H) => {
+                    // full-width colour rows — the only kind of block the format had
+                    ctx.fillStyle = '#ff0000'; ctx.fillRect(0, 44, W, 22);
+                    ctx.fillStyle = '#00ff00'; ctx.fillRect(0, 68, W, 22);
+                    ctx.fillStyle = '#000';
+                    ctx.font = '600 13px "IBM Plex Mono", monospace';
+                    ctx.fillText('SPECTRUM TIMES', 8, 60);
+                    ctx.fillText('P100  40x25  8 COLOURS', 8, 84);
+                    // block mosaics snapped to the cell, no partial cells anywhere
+                    const cw = 16, ch = 11;
+                    [['#ff00ff', 0], ['#00ffff', 1], ['#ffff00', 2], ['#00ff00', 3]]
+                        .forEach(([c, i]) => {
+                            ctx.fillStyle = c;
+                            for (let k = 0; k < 4; k++) ctx.fillRect(8 + (i * 5 + k) * cw, 160 + (k % 2) * ch, cw, ch);
+                        });
+                }
+            },
+
+            /* 43 — ANSI/BBS: EGA sixteen on blue, gradients made of glyphs */
+            canvasBB: {
+                bg: '#0000aa', surface: '#0000aa', surface2: '#000080', navBg: '#000080',
+                cardBg: '#0000aa', ink: '#ffffff', inkSoft: '#aaaaaa', accent: '#55ffff',
+                accent2: '#ffff55',
+                radius: 0, btnRadius: 0, headRadius: 0, border: 1, borderColor: '#00aaaa',
+                over: (ctx, W, H) => {
+                    // a double-line box-drawing frame, the CP437 signature
+                    ctx.strokeStyle = '#55ffff'; ctx.lineWidth = 1;
+                    ctx.strokeRect(5.5, 33.5, W - 11, H - 40);
+                    ctx.strokeRect(8.5, 36.5, W - 17, H - 46);
+                    // the shade ramp: three discrete steps, because there was no alpha
+                    ['#003c8f', '#0064c8', '#55ffff'].forEach((c, i) => {
+                        ctx.fillStyle = c;
+                        for (let k = 0; k < 6; k++) ctx.fillRect(232 + i * 24 + k * 4, 50, 3, 40);
+                    });
+                    ctx.fillStyle = '#ffff55';
+                    ctx.font = '600 9px "IBM Plex Mono", monospace';
+                    ctx.fillText('SPECTRUM BBS  2400 BAUD', 16, 228);
+                }
             }
         };
 
@@ -6340,7 +7540,8 @@
                     'Loose shapes — circles, triangles, squiggles, chips — scattered around the content, rotated, at varying scales, and never aligned to the content grid.',
                     'The palette clashes on purpose: pink #f472b6, cyan #22d3ee, yellow #facc15, blue #3b82f6, all at once.',
                     'Everything is outlined in 2.5px black and cast with a hard offset shadow in a colour, not black.',
-                    'The dot-grid or terrazzo ground is always present.'
+                    'The dot-grid or terrazzo ground is always present.',
+                    'Applied as a brand system rather than as decoration, the weight shifts to the type: one word of the headline takes a clash colour against black, and the scatter retreats to the margins. That single substitution carries more brand recognition than the whole decorative layer.'
                 ],
                 type: [
                     'A heavy geometric display face (Unbounded) for headings, black weight, often with a black text-stroke over a colour fill.',
@@ -6364,12 +7565,15 @@
                     'Card — white fill, 2.5px black border, coloured hard shadow, a chip overlapping one corner.',
                     'Button — accent fill, black border, coloured shadow, uppercase bold.',
                     'Chip — a small rotated square, circle or triangle absolutely positioned near a heading.',
-                    'Squiggle — a zig-zag stroke, drawn twice (colour under black) for the outlined look.'
+                    'Squiggle — a zig-zag stroke, drawn twice (colour under black) for the outlined look.',
+                    'Hero, brand application — a saturated yellow field, black display type at 900, exactly one word in the clash colour, and a single outlined CTA with a 4px black offset shadow.',
+                    'Nav, brand application — a black wordmark on the yellow field with plain links; the nav is the one place the style stays quiet, so the hero can be loud.'
                 ],
                 dos: [
                     'Scatter at least five decorative shapes per screen.',
                     'Use a coloured drop shadow rather than a black one.',
-                    'Let shapes sit both in front of and behind content.'
+                    'Let shapes sit both in front of and behind content.',
+                    'When using it as a brand rather than a texture, move the clash into the headline and thin the scatter — the two loud layers compete if you keep both at full strength.'
                 ],
                 donts: [
                     'Do not align the decoration to the grid.',
@@ -7110,7 +8314,9 @@
                     'Ransom-note headings: every few characters in a different font, size, weight, rotation and background. Never uniform.',
                     'A heavy grain and photocopy artefact layer over the whole page at 10%+.',
                     'Elements are rotated 1–4 degrees and misaligned with each other on purpose.',
-                    'Red #ff2d2d is the only colour, used as a marker or a stamp, over black on off-white.'
+                    'Red #ff2d2d is the only colour, used as a marker or a stamp, over black on off-white.',
+                    'Images are 1-bit, never greyscale. A third-generation copy has no midtones, so every photograph blows out to a coarse dot screen at roughly 5px pitch — crush the contrast first, then screen it.',
+                    'If a second colour appears at all, it is one flat spot ink from a second pass on a second machine — a solid block of it, never a tint, never a gradient, and never more than one.'
                 ],
                 type: [
                     'Courier or a typewriter face for body — it reads as typed, then copied.',
@@ -7122,7 +8328,8 @@
                     'Radius 0. Borders 2.5–8px solid black, sometimes on only two sides.',
                     'Hard shadows in red (10px 10px 0 #f00) rather than black.',
                     'Black bars redacting text, torn-edge effects, staple and tape marks.',
-                    'Fills are pure black or paper; nothing in between except through the grain.'
+                    'Fills are pure black or paper; nothing in between except through the grain.',
+                    'The halftone is a repeating radial-gradient at 5px pitch, multiply-blended over an image already pushed through contrast(2.4) grayscale(1). Finer than about 4px and it reads as a texture instead of as a copier.'
                 ],
                 motion: [
                     'Jitter on hover — a 1–2 degree rotation snap, no easing.',
@@ -7134,7 +8341,9 @@
                     'Ransom heading — per-character spans with randomised font, size, rotation and inverted backgrounds.',
                     'Redaction bar — a solid black rectangle over text, slightly rotated.',
                     'Button — black fill, white typewriter label, red hard shadow, rotated 2°.',
-                    'Margin note — small rotated text in red, overlapping the main column.'
+                    'Margin note — small rotated text in red, overlapping the main column.',
+                    'Halftone image — a hard black border around a crushed 1-bit picture with a 5px dot screen multiplied over it; no radius, no caption styling.',
+                    'Spot block — a solid rectangle of the single second-pass ink carrying reversed uppercase type, rotated a degree or two off true.'
                 ],
                 dos: [
                     'Vary the rotation and misalignment; a consistent 2° tilt on everything looks like a filter.',
@@ -7143,15 +8352,19 @@
                 ],
                 donts: [
                     'Do not align anything to a grid.',
-                    'Do not add a second colour beyond the red.',
-                    'Do not use a clean modern typeface.'
+                    'Do not add a second colour beyond the red — or, if you are working in the spot-ink variant, beyond that one ink. Never both.',
+                    'Do not use a clean modern typeface.',
+                    'Do not ship a smooth greyscale image. A photograph that still has midtones has not been through the copier, and it is the single fastest way to give the style away.',
+                    'Do not confuse this with Concept 41 (Swiss Punk). That style enlarges a halftone over a grid it is deliberately violating; this one has no grid to violate, and the screen is a printing artefact rather than a compositional device.'
                 ],
                 a11y: 'Ransom-note headings must carry an aria-label with the plain text, since the per-character spans destroy the accessible name — the specimen does exactly this. Keep body copy unrotated and on clean paper, and hold contrast at black on off-white.',
                 check: [
                     'Headings mix at least three faces within one word.',
                     'Every ransom heading has an aria-label with the plain string.',
                     'Grain and photocopy artefacts cover the page.',
-                    'Nothing aligns to a grid.'
+                    'Nothing aligns to a grid.',
+                    'No image on the page still has a midtone.',
+                    'At most one colour appears beyond black and paper.'
                 ]
             },
 
@@ -7706,6 +8919,405 @@
                     'Every spacing value is a multiple of 4 and comes from the scale.',
                     'Every component documents all five states.'
                 ]
+            },
+
+            nouveau: {
+                canvas: 'canvasNV', theme: 'theme-nouveau', label: 'Concept 37', series: 'Series II — Movements',
+                name: 'Jugendstil / Art Nouveau',
+                tagline: 'Ornament is not applied to the layout. Ornament is the layout.',
+                bg: 'Cream #f7f1e3 with #fdfaf2 panels. Never white — the ground is aged paper, and the gold only reads as gold against it.',
+                intent: 'The 1890s answer to industrial ugliness: organic line, hand-drawn ornament, and forms borrowed from stems and hair rather than from machines. What makes it different from every other decorative style here is that the ornament is structural. The arch defines the panel, the whiplash line carries the eye from block to block, and the hairline frame does the job a border-radius does elsewhere. Strip the ornament out and there is no composition underneath it — which is exactly the test for whether you have built this style or merely decorated something else with it. Choose it for anything trading on craft, patience and the handmade; reject it for anything that must look fast.',
+                rules: [
+                    'Every curve is a real arc with a changing radius — the whiplash line. Constant-radius curves and symmetric arcs read as Art Deco (Concept 33), not Nouveau.',
+                    'The frame is a hairline, 1px, and doubled with a second inset rule. Weight is never used to signal importance; position and enclosure are.',
+                    'The arch is the primary container. A panel that must carry a portrait, a headline or a product gets a full half-round top.',
+                    'Gold is structure only — frames, rules, ornament, small caps. It never carries body text, because at hairline weight on cream it cannot.',
+                    'Nothing is symmetric about the vertical axis except the arch itself. The ornament around it is always weighted to one side.'
+                ],
+                type: [
+                    'A high-contrast serif for display — Cinzel here; anything with a strong thick/thin axis and generous ascenders works.',
+                    'A softer old-style serif for reading — Lora at 17–18px, 1.75 leading. The measure stays under 68 characters.',
+                    'Eyebrows and labels are small caps or uppercase at 0.32em tracking, in gold, 11–12px.',
+                    'One drop cap per major block, three lines deep, in gold. More than one per screen reads as a pastiche.'
+                ],
+                form: [
+                    'Radius: 0 on rectangles, 999px on the two top corners of an arch. There is no middle setting.',
+                    'Borders 1px #a9884f, with an inner 1px #d8c49a at 2px offset — the doubled rule is the whole frame language.',
+                    'No shadow of any kind. Depth comes from the layered rule, not from light.',
+                    'Ornament is drawn from borders and radii — lozenges are rotated squares, curves are quarter-ellipses. Do not reach for imagery.'
+                ],
+                motion: [
+                    'Transitions are slow for this page — 300ms ease — because the style is arguing for patience.',
+                    'Hover fills an outlined control with gold and inverts its label. Nothing moves position.',
+                    'No parallax, no float, no reveal-on-scroll beyond a plain fade. Movement fights the drawn line.'
+                ],
+                layout: 'A centred column at max-width 72rem with wide 56–72px gutters, and generous 112px vertical rhythm. Two columns at most: an ornament panel and a reading column. Three-column grids are wrong for this style — they leave no room for the frame.',
+                comp: [
+                    'Button — transparent fill, 1px gold border, uppercase serif at 0.22em tracking, 0.7rem/1.6rem padding; fills gold on hover.',
+                    'Card — #fdfaf2 inside the doubled gold frame, 20px padding, zero radius.',
+                    'Panel, feature — the arch: 999px 999px 4px 4px, with a vertical gradient from #fdfaf2 to #f2e9d5.',
+                    'Divider — a 1px rule fading to transparent at both ends, with a rotated gold lozenge centred on it.',
+                    'Nav — no bar and no fill. Wordmark centred, links spread wide at 0.3em tracking, one hairline rule beneath.'
+                ],
+                dos: [
+                    'Let the ornament do structural work, so removing it would break the page.',
+                    'Keep the palette tertiary — ivory, ochre, sage, faded rose. Contrast comes from line, not hue.',
+                    'Give it space. This style suffocates in a dense layout.'
+                ],
+                donts: [
+                    'Do not mix in symmetric sunburst or chevron motifs — that is Concept 33 and the two cancel out.',
+                    'Do not set body text in gold, and do not set display type in a script face; the serif is doing the ornamenting already.',
+                    'Do not add shadow or gradient depth. A drawn line and a simulated light source cannot share a page.'
+                ],
+                a11y: 'The gold #a9884f on cream #f7f1e3 sits near 3:1 — acceptable for large display type and for non-text structure, and a failure for body copy. Set all reading text in #3b3227, which clears 9:1. The doubled hairline frame is decorative, so give interactive elements a focus ring at full ink weight rather than relying on the gold.',
+                check: [
+                    'Deleting the ornament layer leaves no usable composition behind.',
+                    'Every curve on the page has a changing radius.',
+                    'No element casts a shadow.',
+                    'All body text is ink, never gold.'
+                ]
+            },
+
+            konstrukt: {
+                canvas: 'canvasKN', theme: 'theme-konstrukt', label: 'Concept 38', series: 'Series II — Movements',
+                name: 'Soviet Constructivism',
+                tagline: 'Form follows force: the diagonal is the argument.',
+                bg: 'Newsprint #efeae1. Not white, not cream — a paper that looks like it was printed on cheaply and on purpose.',
+                intent: 'The 1920s Soviet poster refused the orthogonal because the orthogonal was the visual language of the order it was arguing against. Type runs on the diagonal, black wedges cut across the frame, red rules run off both edges, and the palette is exactly three values: red, black and the paper. Everything is built to look like a mechanism under load. It is the loudest style on this page that is still completely disciplined — every element is doing structural work, and there is no decoration anywhere. Choose it for manifestos, launches and anything that must read as a position rather than a product.',
+                rules: [
+                    'The diagonal is load-bearing. Headline blocks, rules and photographic masks all sit between 8 and 20 degrees off axis. Only the reading paragraph stays square.',
+                    'Three colours, no fourth: #d4232a red, #111 black, #efeae1 paper. A second hue destroys the style instantly.',
+                    'Rules and wedges must run past the edge of the frame. The composition reads as a crop out of something larger — a shape that stops politely inside the margin reads as a box.',
+                    'Display type is a heavy grotesque squeezed horizontally to 0.82–0.88. Condensed weight is the voice; do not substitute a light face at large size.',
+                    'One action per screen, in red. Red is never decorative and never appears twice.'
+                ],
+                type: [
+                    'One heavy sans at 900 for display, scaled to 0.84 horizontally, uppercase, leading at 0.82.',
+                    'The same family at 400 for body at 17px/1.65 — plain, square to the page, deliberately calm against the shouting.',
+                    'Micro-labels at 9–10px, 700, uppercase, 0.3em tracking. They are the style\'s connective tissue; use several per screen.',
+                    'Two type sizes doing all the work: enormous and small. Nothing in between.'
+                ],
+                form: [
+                    'Radius 0 everywhere. There is not one rounded corner in this style.',
+                    'Borders 2px solid #111 on cards; red rules 3px, full-bleed, rotated.',
+                    'No shadow, no gradient, no texture beyond the paper itself.',
+                    'Cards may be rotated 2–3 degrees, but only cards. Never rotate the reading column.'
+                ],
+                motion: [
+                    'Transitions are 150ms linear — mechanical, not eased. Nothing here should feel soft.',
+                    'Hover swaps red for black on the primary action rather than lightening it.',
+                    'If anything moves on scroll, it slides along the diagonal axis, never straight up.'
+                ],
+                layout: 'Max-width 72rem with a strong asymmetric split — a two-thirds reading column against a one-third tilted panel. Vertical rhythm 112px. The wedge and the rules are absolutely positioned against the section, not against the content, so they cut across the grid instead of respecting it.',
+                comp: [
+                    'Button, primary — solid #d4232a, paper-coloured label, 800 weight, 0.18em tracking, zero radius, no border; goes black on hover.',
+                    'Card — #fdfcfa on a 2px #111 border, 1.6rem padding, optionally rotated -2.5deg.',
+                    'Wedge — an absolutely positioned black clip-path polygon crossing the full section width.',
+                    'Rule — a 3px red bar at 120% width, offset left, rotated 9–14 degrees.',
+                    'Nav — no bar. Micro-labels at the top corners, one on each side, and nothing else.'
+                ],
+                dos: [
+                    'Let the black wedge run under the type so headlines cross from paper onto black mid-word.',
+                    'Use the micro-labels liberally — they are what make it read as a printed bureau document.',
+                    'Keep exactly one red action per screen.'
+                ],
+                donts: [
+                    'Do not centre anything. Symmetry is the opposite of this style\'s argument.',
+                    'Do not introduce a third geometry — no circles as decoration, no curves at all.',
+                    'Do not soften the palette toward maroon or charcoal. Both values are absolute.'
+                ],
+                a11y: 'The palette is genuinely strong: #111 on #efeae1 is over 15:1 and #d4232a on paper clears 4.5:1 at normal size. The risks are structural rather than chromatic — rotated text hurts readers with tracking difficulties, so cap rotation on any running text at zero and keep it to display type; and the black wedge must never pass under body copy, only under headlines set in paper colour.',
+                check: [
+                    'Every rule and wedge exits the frame on at least one side.',
+                    'The page uses exactly three colours.',
+                    'No corner on the page is rounded.',
+                    'Exactly one element is red and clickable.'
+                ]
+            },
+
+            stijl: {
+                canvas: 'canvasST', theme: 'theme-stijl', label: 'Concept 39', series: 'Series II — Movements',
+                name: 'De Stijl / Neoplasticism',
+                tagline: 'Three primaries, two directions, no symmetry. Nothing else is permitted.',
+                bg: 'Off-white #f4f4f0 page with pure #ffffff cells. The rules are black; there is no fourth surface.',
+                intent: 'The most constrained language on this page and, because of it, the most instantly recognisable. Mondrian and van Doesburg reduced composition to three rules: only horizontals and verticals, only the three primaries plus black, white and grey, and never symmetry. Balance is achieved by weight instead of mirroring — one small red block far from centre answers a large white field near it. It reads as absolutely resolved, which is why it still gets borrowed for anything claiming rigour. The catch is that the constraints are the style: add a diagonal, a curve or a fourth hue and what remains is generic modernism.',
+                rules: [
+                    'Only horizontals and verticals. There is no diagonal and no curve anywhere, including in icons and logos.',
+                    'The black rules are the grid gap over a black ground, not borders drawn on cells. That is why every junction lands perfectly and why no rule ever stops short of an edge.',
+                    'Only #c8102e red, #f2c200 yellow, #0b4ea2 blue, plus black, white and grey. Never a tint or a shade of any of them.',
+                    'Colour fills are always a minority of the area — roughly one cell in five. The white is not background, it is the largest element in the composition.',
+                    'Never symmetric. If the layout could be folded in half onto itself, redistribute the weight.'
+                ],
+                type: [
+                    'One geometric or neo-grotesque sans, nothing else on the page.',
+                    'Display at 900, uppercase, leading 0.88, tracking -0.03em, sitting on the baseline of its cell.',
+                    'Body at 17px/1.7. Labels at 10px, 700, uppercase, 0.26em tracking.',
+                    'Type aligns to the cell it occupies — bottom-left by default. Centred text belongs to a different style.'
+                ],
+                form: [
+                    'Radius 0. Every corner is square, including on controls.',
+                    'The rule weight is 9px and it is the only structural device. Thinner reads as a table; thicker reads as Neobrutalism.',
+                    'No shadow, no gradient, no texture. The surface is flat by rule, not by fashion.',
+                    'Cells are unequal on purpose: spans of 1, 2 and 4 columns in the same grid.'
+                ],
+                motion: [
+                    'Transitions 200ms ease, on colour only.',
+                    'Hover fills a white cell with a primary. Nothing moves, scales or lifts — motion would introduce a diagonal.',
+                    'Focus is a black inset ring, square, matching the rule weight.'
+                ],
+                layout: 'A single CSS grid at max-width 72rem with gap:9px over a black background and a matching 9px black border, so the gaps read as rules. Cells span unequally. Below 640px the grid collapses to two columns rather than one, because a single stack loses the composition entirely.',
+                comp: [
+                    'Grid — display:grid; gap:9px; background:#111; border:9px solid #111. Every cell is a child.',
+                    'Cell — white by default, or one of the three primaries; min-height 68px; padding 1rem 1.1rem; content bottom-aligned.',
+                    'Button — a filled primary cell with white 700 label, square, no border of its own.',
+                    'Headline block — a two-column-span white cell carrying the display type at the bottom edge.',
+                    'Nav — a single-row grid across the top with the wordmark in one cell and links in the next, separated by the same rules.'
+                ],
+                dos: [
+                    'Build the whole page as one grid, so the rules are continuous from edge to edge.',
+                    'Let one primary dominate slightly and use the other two sparingly.',
+                    'Vary cell sizes aggressively — equal cells produce a spreadsheet, not a composition.'
+                ],
+                donts: [
+                    'Do not round anything, ever.',
+                    'Do not add a fourth colour, including greys other than the neutral.',
+                    'Do not centre the composition or mirror it left to right.'
+                ],
+                a11y: 'Contrast is excellent by construction: black on white, white on #c8102e and #0b4ea2 all pass comfortably. The one trap is #f2c200 yellow, which fails with white and must always carry black text. Because the layout is a grid of coloured blocks, make sure the DOM order still reads sensibly, and never rely on cell colour alone to indicate state.',
+                check: [
+                    'No diagonal or curve exists anywhere on the page.',
+                    'Every black rule runs uninterrupted between two edges.',
+                    'Exactly six colours are in use, three of them primaries.',
+                    'The layout cannot be folded onto itself.'
+                ]
+            },
+
+            psychedelic: {
+                canvas: 'canvasPS', theme: 'theme-acid', label: 'Concept 40', series: 'Series II — Movements',
+                name: 'Psychedelic / Moscoso',
+                tagline: 'Equal-value complementaries that will not resolve — the page appears to move without moving.',
+                bg: 'Deep violet #6c00a8 under a magenta-and-lime sunburst. There is no neutral ground anywhere in this style.',
+                intent: 'The San Francisco concert poster of 1966–68, and the only style here built on a perceptual trick rather than a taste. Place two saturated complementaries at nearly the same luminance and the eye cannot find the edge between them, so the boundary shimmers. Magenta against lime does it; magenta against white does not. Legibility is spent deliberately — a poster only had to be readable long enough to make you cross the street, and the difficulty was the invitation. On a screen that trade costs far more than it did on a wall, so the discipline is to confine the vibration to display type and keep reading text on a flat panel.',
+                rules: [
+                    'The vibration comes from equal luminance, not from saturation alone. Check the pair in greyscale: if one goes obviously darker, the effect is gone and you have merely picked loud colours.',
+                    'Zero blur on the complementary halo. Any blur at all lets the edge resolve and kills the whole style.',
+                    'Radial geometry organises the page — sunburst rays and concentric rings, not a grid. There is one optical centre and everything orbits it.',
+                    'Display lettering is warped to fill its shape rather than set on a line. Letterforms swell and compress to fit the ring or the panel they sit in.',
+                    'Body copy always sits on an opaque dark panel. The vibrating field is for display type only.'
+                ],
+                type: [
+                    'A heavy geometric display face at 900, uppercase, tight leading (0.92) and near-zero tracking, so letters touch and fill.',
+                    'A 2px complementary text-shadow on both sides of display type — the halo that produces the shimmer.',
+                    'Body at 16px/1.7 in yellow #ffe94a or lime #9dff2e, on the dark panel only.',
+                    'Labels uppercase at 0.25em tracking. Never set body copy in the vibrating pair.'
+                ],
+                form: [
+                    'Radius is generous and organic — 28px on panels, 999px on controls and discs.',
+                    'The sunburst is a repeating-conic-gradient of the complementary pair at 9-degree segments.',
+                    'Rings are a hard-stop radial-gradient — discrete bands, never a smooth fade.',
+                    'Borders are 3px in the opposing accent, which keeps the panel from dissolving into the field.'
+                ],
+                motion: [
+                    'The shimmer is optical, not animated — which is why it survives prefers-reduced-motion untouched. Never animate it.',
+                    'Hover scales a control slightly and rotates it a degree or two, 200ms ease.',
+                    'Avoid animated hue rotation. It looks like a screensaver and destroys the equal-luminance relationship the style depends on.'
+                ],
+                layout: 'A centred column at max-width 72rem over a full-bleed sunburst, with 112px vertical rhythm. One circular focal element per screen, offset from centre. Reading content lives in flat panels no wider than 34rem so the field is always visible around them.',
+                comp: [
+                    'Panel — #2a0140 fill, 3px #9dff2e border, 28px radius, 1.8rem padding. This is where all reading happens.',
+                    'Button — #ff6a00 fill, #2a0140 label, 3px dark border, fully round; scales 1.06 and rotates -2deg on hover.',
+                    'Disc — a hard-stop radial-gradient in four bands, with a dark inner circle carrying the display type.',
+                    'Rays — repeating-conic-gradient at 9deg alternating the complementary pair, on a full-bleed layer at 0.85 opacity.',
+                    'Nav — dark panel bar with lime links; the wordmark is set in the vibrating treatment, the links are not.'
+                ],
+                dos: [
+                    'Test the pair in greyscale before shipping it — that is the whole technique.',
+                    'Keep exactly one optical centre per screen.',
+                    'Let display type distort to fill its container; regular letterspacing reads as a costume.'
+                ],
+                donts: [
+                    'Do not blur the halo, and do not soften the ring stops.',
+                    'Do not set body text on the sunburst.',
+                    'Do not animate the colours. The effect is already motion; adding real motion produces nausea, not energy.'
+                ],
+                a11y: 'This is the least accessible concept on this page and it should be described as such rather than defended. Lime #9dff2e on magenta #d0009b is roughly 1.3:1 and fails every threshold — that failure is the effect. Contain it: every piece of reading text sits on #2a0140 where yellow #ffe94a clears 11:1, the vibrating treatment is barred from any text under 32px, and no state or meaning is ever carried by the shimmer alone. Because the effect is drawn rather than animated, reduced-motion users are unaffected, but consider an opt-out that swaps the sunburst for a flat violet field.',
+                check: [
+                    'The complementary pair converges to a single grey in greyscale.',
+                    'No text under 32px carries the halo treatment.',
+                    'All body copy sits on an opaque panel.',
+                    'Nothing on the page animates its hue.'
+                ]
+            },
+
+            swisspunk: {
+                canvas: 'canvasWG', theme: 'theme-punk', label: 'Concept 41', series: 'Series II — Movements',
+                name: 'Swiss Punk / Weingart',
+                tagline: 'The Swiss grid, still visible, and violated by whole units.',
+                bg: 'Warm grey #e8e4dc with the working grid left faintly visible over it. The grid is the ground.',
+                intent: 'Weingart taught inside the Basel school and then spent a career pulling it apart. The grid of Concept H is still underneath everything — deliberately left visible — but baselines step, letterspacing opens past legibility, halftone screens are enlarged until the dots stop being tone and become the image, and blocks rotate a degree or two off true. This is what separates it from Concept Z: zine chaos has no grid to violate, while Swiss Punk is legible precisely as a violation, and every offset is a whole number of grid units. Break the grid at random and you get neither style. Choose it for editorial, cultural and type-led work that needs to look intelligent rather than merely loud.',
+                rules: [
+                    'The grid must remain perceptible — a faint ruled bed behind the content. Hiding it turns every deliberate break into an accident.',
+                    'Every violation is a whole grid unit. Stepped baselines shift by exactly one column (68px here), never by an arbitrary amount.',
+                    'Halftone is enlarged past the point of reading as tone: 11px dot pitch or coarser, so the screen becomes the image.',
+                    'Extreme letterspacing (0.5em+) is reserved for short uppercase labels. Applying it to a sentence is the beginner\'s version of this style.',
+                    'Rotation is small and rare — 1.5 to 3 degrees, on one or two elements per screen. Larger angles read as Constructivism (Concept 38).'
+                ],
+                type: [
+                    'One neo-grotesque doing everything, exactly as in Concept H. The rupture is positional, not typefacial.',
+                    'Display at 800, uppercase, leading 0.95, tracking -0.035em, set in a stepped stack of three lines.',
+                    'A single enormous numeral (0.8 leading, 10rem+) used as a compositional element rather than as information.',
+                    'Labels at 0.52em tracking, 10–11px, 600. Body stays plain at 17px/1.7 — the reading text is never the thing being broken.'
+                ],
+                form: [
+                    'Radius 0 throughout. Softness would read as apology.',
+                    'The grid bed is two repeating-linear-gradients: 68px columns at 10% ink, 22px baselines at 6%.',
+                    'Halftone is a radial-gradient background-image at 11px, clipped to a circle.',
+                    'Panels are 1px hairline on white #fdfcf8. Solid accent slabs sit behind short labels, rotated -1.5deg.'
+                ],
+                motion: [
+                    'Transitions 200ms ease on colour and background only.',
+                    'Hover swaps an accent slab from blue to orange. Nothing translates — the offsets are compositional and must stay put.',
+                    'No scroll-linked motion. This style is a printed page; it does not respond to the scroll position.'
+                ],
+                layout: 'Max-width 72rem on a 68px column grid with a 22px baseline. Content sits at two-thirds against a one-third panel. The stepped headline is the only element permitted to break the left margin, and it breaks it by exactly one, two and three columns on successive lines.',
+                comp: [
+                    'Panel — #fdfcf8, 1px rgba(20,33,61,.35) border, 1.5rem padding, zero radius.',
+                    'Slab — solid #1b4dd8 with paper-coloured label, inline-block, rotated -1.5deg, 0.3rem/0.7rem padding.',
+                    'Halftone disc — radial-gradient dots at 11px pitch, clipped round, 120px, used as the only image on the page.',
+                    'Stepped headline — three block spans with margin-left of 0, 68px and 136px; the third takes the secondary accent.',
+                    'Nav — no bar; a widely tracked label at each end of a hairline rule.'
+                ],
+                dos: [
+                    'Leave the grid visible and let the reader see what is being broken.',
+                    'Measure every offset in grid units and keep the numbers round.',
+                    'Give the composition one enormous element — a numeral or a halftone — and keep everything else small.'
+                ],
+                donts: [
+                    'Do not break the grid at random; that is Concept Z and it needs different craft.',
+                    'Do not letterspace running text.',
+                    'Do not add a third accent. Blue and orange are already an argument.'
+                ],
+                a11y: 'Ink #14213d on #e8e4dc clears 12:1 and the blue accent passes at normal size; the orange #ff6a13 is display-only and must not carry small text on the paper ground. The real risks are structural: stepped baselines can break the reading order for screen readers if built with positioning, so implement them as ordinary block elements with margins, and keep the visible grid bed at pointer-events:none and aria-hidden so it never enters the accessibility tree.',
+                check: [
+                    'The grid bed is visible behind the content.',
+                    'Every offset is an exact multiple of the column width.',
+                    'Letterspacing above 0.3em appears only on uppercase labels.',
+                    'No element is rotated more than 3 degrees.'
+                ]
+            },
+
+            teletext: {
+                canvas: 'canvasTX', theme: 'theme-teletext', label: 'Concept 42', series: 'Series II — Character-Cell',
+                name: 'Teletext / Ceefax',
+                tagline: 'Eight colours, forty columns, no alpha. Every constraint is a hardware fact.',
+                bg: 'Pure #000000 inside the screen, with a grey bezel around it. Black is not a dark theme here — it is the absence of signal.',
+                intent: 'Broadcast from 1974, and the purest example on this page of an aesthetic that was never a taste. Eight colours because the signal carried three bits. Blocky mosaics because the character ROM had no curves. Double-height headlines because a control code could stretch a row and nothing finer existed. That is exactly why it still works as a design language: the restrictions were never fashion, so they never dated. Snap everything to a 40x25 character cell, refuse tints and blends, and the result is coherent without a single judgement call. Choose it for anything wanting the authority of a public utility; reject it wherever dense reading matters.',
+                rules: [
+                    'Exactly eight colours: black, red, green, yellow, blue, magenta, cyan, white — full-on RGB primaries with no intermediate values. A tint anywhere breaks the illusion completely.',
+                    'Everything measures in character cells. Widths are in ch, the screen is 40ch wide, and no element occupies a partial cell.',
+                    'Coloured blocks are full rows or full cells. There is no such thing as a rounded, padded or partially filled block.',
+                    'Headlines use double-height rows — a vertical scale of roughly 1.9 anchored to the top of the row, with the following row left empty exactly as the format required.',
+                    'No antialiasing, no blur, no shadow, no gradient. There was no alpha channel to make them with.'
+                ],
+                type: [
+                    'One monospace, everywhere, at one size. IBM Plex Mono here; any fixed-pitch face works as long as nothing else appears on the page.',
+                    'Line-height locked to 1.24, letter-spacing 0.04em, so rows stack on an exact cell grid.',
+                    'Everything is uppercase. The original character set had lowercase but almost nothing used it.',
+                    'Double-height for headlines only, one per screen area, and never nested inside a coloured row that also carries body text.'
+                ],
+                form: [
+                    'Radius 0 on everything inside the screen. The only rounded thing on the page is the bezel around it.',
+                    'Colour is applied as a full-cell background with a contrasting foreground, never as a border.',
+                    'Mosaic graphics are built from the block glyphs — the eighth-block and half-block characters — laid on the cell grid.',
+                    'The bezel is the one concession to the physical object: #2b2b2b, 10px radius, with an inset 2px lighter ring.'
+                ],
+                motion: [
+                    'None. The format had a page-flip and nothing else; anything smoother reads as a different era.',
+                    'If a transition is unavoidable, cut instantly between states rather than fading.',
+                    'Do not simulate CRT scanlines or flicker here — that is Concept T, and mixing them muddles both.'
+                ],
+                layout: 'The screen is a fixed 40ch column, centred, and it does not reflow — it scales. Around it the page can be an ordinary two-column layout, but inside the bezel every row is a flex line with space-between and white-space:pre so the cell alignment survives.',
+                comp: [
+                    'Screen — #000 ground, max-width 42ch, 0.6ch/1ch padding, font-size clamped between 0.66rem and 0.95rem.',
+                    'Header row — two spans, space-between: page number in cyan on the left, date and time in yellow on the right.',
+                    'Banner row — full-width background in one of the eight, with a contrasting label; used for section headings.',
+                    'Index row — label, dot leaders, and a page number, all inside one pre-formatted line.',
+                    'Mosaic strip — a row of block glyphs in three or four of the eight colours, aligned to the cell grid.'
+                ],
+                dos: [
+                    'Lock the palette to eight constants and reference nothing else.',
+                    'Let the screen scale rather than reflow; a reflowed teletext page is a broken one.',
+                    'Use the yellow-on-blue and black-on-cyan pairs for anything that must actually be read.'
+                ],
+                donts: [
+                    'Do not add a ninth colour, including a grey.',
+                    'Do not round, pad or shadow anything inside the screen.',
+                    'Do not put long-form reading matter in this style. Forty columns is a headline medium.'
+                ],
+                a11y: 'The palette is the problem and it must be managed rather than excused. Pure blue #0000ff on black is about 2.4:1 and pure red #ff0000 about 5.2:1 — the original medium got away with both at a viewing distance no monitor has. Restrict blue and red to backgrounds carrying yellow or white text, and keep white, yellow and cyan for foreground. Because the screen scales instead of reflowing, set a minimum font-size floor so it never drops below readable, and mark the mosaic strips aria-hidden since they carry no information.',
+                check: [
+                    'A colour audit returns exactly eight values.',
+                    'Every width inside the screen is expressed in ch.',
+                    'No element inside the screen has a radius, shadow or gradient.',
+                    'Blue and red appear only as backgrounds, never as text colour.'
+                ]
+            },
+
+            bbs: {
+                canvas: 'canvasBB', theme: 'theme-ansi', label: 'Concept 43', series: 'Series II — Character-Cell',
+                name: 'ANSI / BBS Demoscene Art',
+                tagline: 'CP437 on the EGA sixteen: the terminal used as a canvas, not as a mood.',
+                bg: 'The DOS blue #0000aa, on a #000080 page. Nobody chose this blue — it was the default — and keeping it is part of the reference.',
+                intent: 'The demoscene took the same character-cell constraint as Concept 42 and drew pictures with it anyway. Logos, borders and ornament are all made from the CP437 box-drawing and shade glyphs, at exactly the same cell size as the text beside them. Gradients are three discrete characters — light, medium, dark — because there was no alpha to fade with. Where Concept T borrows the terminal as an atmosphere, this uses the terminal as a drawing surface, which is a different and much stricter discipline. Choose it for developer tools, release notes and anything addressing an audience that will recognise the reference; reject it anywhere the content must reflow.',
+                rules: [
+                    'Every graphic element is a character. Box corners, rules, logos and shading are glyphs on the grid, never borders or images.',
+                    'The shade ramp is three literal characters — light, medium, dark — plus solid. Opacity is not available and simulating it with rgba defeats the style.',
+                    'The palette is the sixteen EGA colours and no others, on the default blue field.',
+                    'Eighty columns is the hard limit. Long art scrolls horizontally; it never wraps, because reflowed ANSI is destroyed ANSI.',
+                    'Text and art share one cell size and one font. If the logo is set in a different face or size, the illusion collapses immediately.'
+                ],
+                type: [
+                    'One monospace stack for the entire section, at a single size with line-height 1.3.',
+                    'Block-art wordmarks are two rows of glyphs at line-height 1.02, so the halves join without a seam.',
+                    'Menu keys are a single bright character on a cyan field; labels sit in cyan, values in dim cyan.',
+                    'Mixed case is fine for prose, but all art, menus and status lines are uppercase.'
+                ],
+                form: [
+                    'Radius 0. The only border is a 3px double rule in bright cyan, standing in for the double box-drawing line.',
+                    'Panels are 1px in the dim cyan #00aaaa; the bright #55ffff is reserved for the outer frame and for keys.',
+                    'No shadow and no gradient. Depth is faked with the shade ramp and nothing else.',
+                    'white-space is pre and overflow-x is auto on every art block.'
+                ],
+                motion: [
+                    'A block cursor is the only animation the style permits, and even that is optional.',
+                    'No transitions on colour or position; the era had instant redraws.',
+                    'If you must animate, do it by swapping characters on a fixed interval, not by tweening anything.'
+                ],
+                layout: 'Two columns at max-width 72rem: an art screen and a reading column. The art screen has its own fixed character width and scrolls horizontally inside itself rather than reflowing, so the surrounding page can stay responsive while the art stays intact.',
+                comp: [
+                    'Screen — #0000aa fill, 3px double #55ffff border, 1.1rem/1.3rem padding, white-space pre, overflow-x auto.',
+                    'Wordmark — two pre-formatted rows of block glyphs at line-height 1.02 in bright cyan.',
+                    'Frame — box-drawing double-line corners and edges as literal characters, in dim cyan with a white label inside.',
+                    'Menu row — a bright key on a cyan field, then a cyan label, then a dim-cyan value, aligned with tabs.',
+                    'Shade ramp — the three shade glyphs plus solid, in sequence, used as a legend or a divider.'
+                ],
+                dos: [
+                    'Draw the ornament from the same character set as the text.',
+                    'Let art scroll horizontally inside its own container.',
+                    'Keep the default blue. Substituting a tasteful navy removes the entire reference.'
+                ],
+                donts: [
+                    'Do not use rgba shading or CSS gradients to fake the ramp.',
+                    'Do not reflow or wrap an art block at any breakpoint.',
+                    'Do not add CRT scanlines or glow — that is Concept T borrowing the terminal as a mood, which is the opposite of what this style does.'
+                ],
+                a11y: 'The default palette is weak: #aaaaaa on #0000aa is roughly 3.6:1 and fails for body text, so reading copy uses white #ffffff (about 8.6:1) and the grey is confined to secondary values. Bright cyan #55ffff on blue passes comfortably and carries the interactive elements. Block art is decorative and must be marked aria-hidden or given a text alternative, because a screen reader will otherwise announce it glyph by glyph; the horizontally scrolling art container needs a tabindex so keyboard users can reach its scrollbar.',
+                check: [
+                    'Every graphic element on the page is a text character.',
+                    'A search for rgba() or linear-gradient inside the section returns nothing.',
+                    'No art block wraps at any viewport width.',
+                    'Body copy is white, not grey.'
+                ]
             }
         };
 
@@ -7769,7 +9381,10 @@
             liquid: '27. LIQUID GLASS', spatial: '28. SPATIAL', ainative: '29. AI-NATIVE',
             kinetic: '30. KINETIC', skeuotrue: '31. TRUE SKEUOMORPHISM', bauhaus: '32. BAUHAUS',
             deco: '33. ART DECO', a11y: '34. ACCESSIBILITY-FIRST', editorial: '35. EDITORIAL',
-            designsystem: '36. DESIGN SYSTEM'
+            designsystem: '36. DESIGN SYSTEM', nouveau: '37. JUGENDSTIL',
+            konstrukt: '38. SOVIET CONSTRUCTIVISM', stijl: '39. DE STIJL',
+            psychedelic: '40. PSYCHEDELIC', swisspunk: '41. SWISS PUNK',
+            teletext: '42. TELETEXT', bbs: '43. ANSI / BBS'
         };
 
         let segBlocksCache = null;
