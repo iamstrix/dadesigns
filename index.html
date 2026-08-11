@@ -3407,24 +3407,94 @@
         .hero-plate-wrap {
             place-self: center;
             z-index: 2;
-            padding: 2rem 1.25rem;
+            /* The wide side padding is what keeps the bloom inside the wall.
+               The plate is viewport-constrained below ~864px, and the bloom is
+               always plate + 144px, so without this reserve the fade would be
+               cropped by the wall's overflow mid-ramp and land as a hard
+               vertical line over the tiles. */
+            padding: 2rem 5rem;
             /* the wrapper spans the cell, so it must not eat clicks meant
                for the tiles either side of the card */
             pointer-events: none;
         }
 
-        /* Opaque, deliberately. What drifts behind ranges from black
-           terminals to white Swiss layouts, so no translucent treatment
-           can promise a contrast ratio. Never give this an alpha. */
+        /* A bloom rather than a card: no border, no edge, the panel simply
+           stops existing towards its margins. The core stays FULLY OPAQUE
+           behind every glyph — what drifts past ranges from black terminals
+           to white Swiss layouts and it moves, so no translucent treatment
+           can promise a contrast ratio. The fade is confined to a band that
+           contains no text. Never let the solid stop below shrink past the
+           text. */
         .hero-plate {
+            position: relative;
             pointer-events: auto;
-            max-width: 44rem;
+            /* Yields width as the viewport narrows, because the burn needs
+               room the text would otherwise take. An ellipse has to be wide
+               enough to circumscribe the headline's corners AND still fade to
+               nothing before the wall crops it; at a fixed 44rem it cannot do
+               both below ~1100px. */
+            max-width: min(44rem, 62vw);
             text-align: center;
-            background: var(--bg-master);
-            border: 1px solid #e2e8f0;
-            border-radius: 16px;
             padding: 2.5rem 2.25rem;
-            box-shadow: 0 24px 60px rgba(15, 23, 42, .18);
+        }
+
+        /* The text has to ride above the bloom, which is painted by ::before. */
+        .hero-plate>* {
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-plate::before {
+            content: '';
+            position: absolute;
+            /* An oblong burn: wider than tall, following the shape of the text
+               block rather than boxing it. Centred on the plate and sized
+               against it, but CLAMPED TO THE VIEWPORT — the wall clips its
+               overflow, and a burn cropped while still opaque lands as a hard
+               vertical edge across live tiles. The clamp is what makes the
+               ellipse survivable at mid widths; it is why this is not simply
+               inset like a box. */
+            left: 50%;
+            top: 50%;
+            width: min(190%, 100vw);
+            height: 150%;
+            transform: translate(-50%, -50%);
+            z-index: 0;
+            /* Colour and falloff are kept on separate layers. Blending a tint
+               into the alpha ramp muddies the fade; masking leaves it clean. */
+            background: linear-gradient(160deg, #fffefb 0%, #fcfcf9 45%, #f5f2e9 100%);
+            /* closest-side, so the burn actually reaches zero at its own edges.
+               farthest-corner would leave it still opaque where the box ends,
+               which is a hard edge by another route.
+
+               The solid stop has to clear the text's CORNERS, not its edges:
+               an ellipse cuts corners, and the corner distance combines both
+               axes as hypot(dx/rx, dy/ry). That is what the ellipse has to be
+               oversized for, and what the tests below measure directly. */
+            -webkit-mask-image: radial-gradient(closest-side ellipse at center,
+                    #000 0 82%, rgba(0, 0, 0, 0) 100%);
+            mask-image: radial-gradient(closest-side ellipse at center,
+                    #000 0 82%, rgba(0, 0, 0, 0) 100%);
+            /* Pseudo-elements inherit pointer-events, and the plate is auto —
+               without this the bloom's margin would swallow hover from the
+               rows underneath and stop them slowing. */
+            pointer-events: none;
+        }
+
+        /* Without mask support the burn would paint as a hard-edged rectangle
+           far larger than the text, which is much worse than the card it
+           replaces. Fall back to the card. */
+        @supports not ((mask-image: radial-gradient(#000, #000)) or (-webkit-mask-image: radial-gradient(#000, #000))) {
+            .hero-plate::before {
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                transform: none;
+                border-radius: 16px;
+                border: 1px solid #e2e8f0;
+                box-shadow: 0 24px 60px rgba(15, 23, 42, .18);
+            }
         }
 
         /* Tiles — shared by the wall and the grid below it */
@@ -3621,8 +3691,27 @@
                 grid-area: auto;
             }
 
+            /* Un-stacked here, so the bloom's sides fall on the wall's own
+               background rather than on tiles. Cropping is invisible against
+               a matching colour, and the text needs the width back. */
+            .hero-plate-wrap {
+                padding: 2rem 1.25rem;
+            }
+
+            /* Drop the width clamp here. It exists to give the burn room
+               beside the text, but un-stacked the burn's sides fall on the
+               wall's own background, so it needs none — and the clamp would
+               otherwise squeeze the plate to about 150px on a phone. */
             .hero-plate {
+                max-width: 100%;
                 padding: 1.75rem 1.25rem;
+            }
+
+            /* Same reasoning for the burn itself: unclamped, so it can be wide
+               enough to circumscribe a headline that nearly fills the screen.
+               Clamped to 100vw here it could not, and the corners bled. */
+            .hero-plate::before {
+                width: 190%;
             }
 
             .hero-rail.is-grid {
