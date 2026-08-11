@@ -3274,6 +3274,9 @@
         }
 
         /* The banner explaining the affordance, under the page header. */
+        /* The prose is wrapped in its own span deliberately: as bare text
+           nodes beside the glyph, each run became an anonymous flex item and
+           wrapped as a separate column once the container got narrow. */
         .seg-hint {
             display: inline-flex;
             align-items: center;
@@ -3286,6 +3289,11 @@
             color: #4338ca;
             font-family: 'IBM Plex Mono', monospace;
             font-size: .75rem;
+            text-align: left;
+        }
+
+        .seg-hint-key {
+            flex: none;
         }
 
         @media (hover: none) {
@@ -3301,13 +3309,163 @@
         }
 
         /* ------------------------------------------------------------
-           HERO INDEX — visual jump list (chrome, not a concept)
+           HERO WALL — three marquee rows of every concept (chrome, not
+           a concept, so no SEG_CSS_BLOCK entry).
            43 full-height sections is a long way to scroll to find one
            style. Every concept already draws the same landing page in
-           its own treatment, so the thumbnails are free: the tiles are
-           drawImage copies of specimens that are on the page anyway.
-           A rail by default, one click from becoming the whole grid.
+           its own treatment, so the thumbnails cost nothing to source:
+           they are re-encodings of specimens the page draws anyway.
+           The rows and the title plate are two layers of ONE grid cell.
            ------------------------------------------------------------ */
+        .hero-wall {
+            --wall-tile: 200px;
+            --wall-gap: 16px;
+            display: grid;
+            position: relative;
+            overflow: hidden;
+            background: var(--bg-master);
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        /* Both layers claim the same cell, so the band ends up as tall as
+           whichever is taller. On a phone that is the plate, and the rows
+           simply centre inside the surplus instead of overflowing it. */
+        .hero-wall-rows,
+        .hero-plate-wrap {
+            grid-area: 1 / 1;
+        }
+
+        .hero-wall-rows {
+            align-self: center;
+            display: flex;
+            flex-direction: column;
+            gap: var(--wall-gap);
+            padding: var(--wall-gap) 0;
+            min-width: 0;
+        }
+
+        /* No JS means no tiles; leave the plate behaving as the plain
+           centred header this markup replaced. */
+        html:not(.js) .hero-wall-rows {
+            display: none;
+        }
+
+        .hero-row {
+            overflow: hidden;
+        }
+
+        /* A grouping hook for measuring and cloning one loop's worth of tiles;
+           display:contents keeps the tiles as direct flex items of the track,
+           so the wrapper costs no box and no layout. */
+        .hero-seq {
+            display: contents;
+        }
+
+        .hero-track {
+            display: flex;
+            width: max-content;
+            /* --shift is a pixel measurement of one sequence, written by
+               buildHeroWall. A percentage would depend on how many copies
+               got built, which varies with the viewport. */
+            animation: hero-marquee var(--dur, 90s) linear infinite;
+            will-change: transform;
+        }
+
+        .hero-track[data-dir="right"] {
+            animation-direction: reverse;
+        }
+
+        @keyframes hero-marquee {
+            to {
+                transform: translateX(calc(-1 * var(--shift, 0px)));
+            }
+        }
+
+        /* Aiming at a moving target is the one real cost of a marquee, so
+           the whole wall holds still on hover or focus — pausing only the
+           row under the cursor leaves its neighbours sliding, which reads
+           as a glitch rather than a courtesy. .is-paused is the offscreen
+           case, set by an IntersectionObserver. */
+        .hero-wall:hover .hero-track,
+        .hero-wall:focus-within .hero-track,
+        .hero-wall.is-paused .hero-track {
+            animation-play-state: paused;
+        }
+
+        /* Reduced motion: no clones are built, so each row becomes a plain
+           scrollable strip rather than a frozen window onto six tiles. */
+        .hero-wall.is-static .hero-row {
+            overflow-x: auto;
+        }
+
+        .hero-wall.is-static .hero-track {
+            animation: none;
+        }
+
+        .hero-plate-wrap {
+            place-self: center;
+            z-index: 2;
+            padding: 2rem 1.25rem;
+            /* the wrapper spans the cell, so it must not eat clicks meant
+               for the tiles either side of the card */
+            pointer-events: none;
+        }
+
+        /* Opaque, deliberately. What drifts behind ranges from black
+           terminals to white Swiss layouts, so no translucent treatment
+           can promise a contrast ratio. Never give this an alpha. */
+        .hero-plate {
+            pointer-events: auto;
+            max-width: 44rem;
+            text-align: center;
+            background: var(--bg-master);
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 2.5rem 2.25rem;
+            box-shadow: 0 24px 60px rgba(15, 23, 42, .18);
+        }
+
+        /* Tiles — shared by the wall and the grid below it */
+        .hero-tile {
+            display: block;
+            text-decoration: none;
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+            transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+        }
+
+        .hero-tile:hover {
+            transform: translateY(-3px);
+            border-color: #94a3b8;
+            box-shadow: 0 10px 22px rgba(15, 23, 42, .13);
+        }
+
+        .hero-tile:focus-visible {
+            outline: 3px solid #4f46e5;
+            outline-offset: 2px;
+        }
+
+        /* The gap between wall tiles is a margin, never a flex gap: a
+           sequence's width has to INCLUDE its trailing gap or --shift
+           lands half a gap short and the loop shows a seam every pass. */
+        .hero-wall .hero-tile {
+            flex: 0 0 var(--wall-tile);
+            width: var(--wall-tile);
+            margin-right: var(--wall-gap);
+        }
+
+        /* Reserves the exact box before the blob resolves, so nothing on
+           the page moves when the thumbnails arrive. */
+        .hero-thumb {
+            display: block;
+            width: 100%;
+            aspect-ratio: 4 / 3;
+            border-bottom: 1px solid #e2e8f0;
+            background: #f1f5f9;
+        }
+
         .hero-index {
             background: #f1f5f9;
             border-top: 1px solid #e2e8f0;
@@ -3315,9 +3473,9 @@
             padding: 2.5rem 1.5rem;
         }
 
-        /* An empty rail is worse than no rail: the tiles are injected, so
-           hide the whole block until the script has confirmed it can run.
-           Reuses the .js class set on <html> at the top of the script. */
+        /* A toggle that reveals nothing is worse than no toggle: the tiles
+           are injected, so hide the whole block until the script has
+           confirmed it can run. Reuses the .js class set on <html>. */
         html:not(.js) .hero-index {
             display: none;
         }
@@ -3328,7 +3486,6 @@
             justify-content: space-between;
             gap: 1rem;
             flex-wrap: wrap;
-            margin-bottom: 1.1rem;
         }
 
         .hero-index-head h2 {
@@ -3363,63 +3520,18 @@
             outline-offset: 2px;
         }
 
+        /* Collapsed means genuinely absent — the wall above already shows
+           what exists, so an empty strip here would be pure noise. Nothing
+           is built until the toggle is pressed. */
         .hero-rail {
-            display: flex;
-            gap: 1rem;
-            overflow-x: auto;
-            scroll-snap-type: x proximity;
-            padding-bottom: .85rem;
-            /* Reserve the exact tile height before the script injects anything,
-               or the whole page jumps on boot. Derivation, at the 200px tile:
-               canvas 200x(192/256) = 150, fixed caption 63.2, two 1px borders,
-               plus this element's 13.6px padding-bottom = 228.8. */
-            min-height: 229px;
+            display: none;
         }
 
         .hero-rail.is-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            overflow: visible;
-            min-height: 0;
-        }
-
-        .hero-tile {
-            flex: 0 0 200px;
-            scroll-snap-align: start;
-            display: block;
-            text-decoration: none;
-            background: #fff;
-            border: 1px solid #e2e8f0;
-            border-radius: 10px;
-            overflow: hidden;
-            transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
-        }
-
-        /* In grid mode the track sizes the tile, so the flex basis has to go
-           or every tile stays locked at 200px. */
-        .hero-rail.is-grid .hero-tile {
-            flex: initial;
-            width: auto;
-        }
-
-        .hero-tile:hover {
-            transform: translateY(-3px);
-            border-color: #94a3b8;
-            box-shadow: 0 10px 22px rgba(15, 23, 42, .13);
-        }
-
-        .hero-tile:focus-visible {
-            outline: 3px solid #4f46e5;
-            outline-offset: 2px;
-        }
-
-        /* These canvases never pass through getCtx, so nothing sets an inline
-           width on them and CSS keeps control of the size. */
-        .hero-tile canvas {
-            display: block;
-            width: 100%;
-            height: auto;
-            border-bottom: 1px solid #e2e8f0;
+            gap: 1rem;
+            margin-top: 1.1rem;
         }
 
         .hero-tile-cap {
@@ -3440,10 +3552,9 @@
             margin-bottom: .15rem;
         }
 
-        /* Clamped to two lines and floored at two lines, so every caption is
-           the same height whatever the concept is called. That is what makes
-           the rail's reserved min-height below an exact figure rather than a
-           guess that a longer name would invalidate. */
+        /* Clamped to two lines and floored at two lines, so every tile is the
+           same height whatever the concept happens to be called — otherwise a
+           long name would set the height of its whole grid row. */
         .hero-tile-cap span {
             display: -webkit-box;
             -webkit-line-clamp: 2;
@@ -3457,14 +3568,59 @@
             color: #0f172a;
         }
 
-        @media (max-width: 480px) {
-            .hero-tile {
-                flex-basis: 160px;
+        /* In the wall the caption is an overlay, not a bar under the picture.
+           The sketch is a wall of specimens, and three rows of captioned tiles
+           would run ~700px tall before the plate is even considered. Hovering
+           already pauses the row, so the name arrives exactly when it is
+           wanted; the link's accessible name comes from aria-label regardless,
+           so nothing here is load-bearing for a screen reader. */
+        .hero-wall .hero-tile {
+            position: relative;
+        }
+
+        .hero-wall .hero-tile-cap {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(252, 252, 249, .96);
+            border-top: 1px solid #e2e8f0;
+            transform: translateY(101%);
+            transition: transform .18s ease;
+        }
+
+        .hero-wall .hero-tile:hover .hero-tile-cap,
+        .hero-wall .hero-tile:focus-visible .hero-tile-cap {
+            transform: translateY(0);
+        }
+
+        .hero-wall .hero-thumb {
+            border-bottom: 0;
+        }
+
+        @media (max-width: 900px) {
+            .hero-wall {
+                --wall-tile: 160px;
+            }
+        }
+
+        @media (max-width: 560px) {
+            .hero-wall {
+                --wall-tile: 128px;
+                --wall-gap: 12px;
             }
 
-            /* same derivation at the 160px tile: 120 + 63.2 + 2 + 13.6 */
-            .hero-rail {
-                min-height: 199px;
+            /* Stop stacking and let the two layers become two rows. On a phone
+               the plate is always the taller of the pair, so overlaying them
+               reduces the wall to a few slivers down the edges — which loses
+               the entire point of the hero. Below each other, both are whole. */
+            .hero-wall-rows,
+            .hero-plate-wrap {
+                grid-area: auto;
+            }
+
+            .hero-plate {
+                padding: 1.75rem 1.25rem;
             }
 
             .hero-rail.is-grid {
@@ -3560,27 +3716,49 @@
         </div>
     </nav>
 
-    <!-- Hero / Intro -->
-    <header class="py-20 px-6 text-center max-w-4xl mx-auto">
-        <h1 class="text-5xl md:text-7xl font-extrabold text-slate-900 mb-6 tracking-tight">The Evolution of the
-            Interface.</h1>
-        <p class="text-xl text-slate-600 leading-relaxed">
-            From the generic AI-generated defaults to bold, personality-driven frameworks. We explore the space between
-            <strong>Baseline X</strong> and the diverse horizons of modern digital design.
-        </p>
-        <p class="seg-hint" id="segHint" hidden>
-            <span aria-hidden="true">⌘</span>
-            Click any concept below to copy its full <b>DESIGN.md</b> to your clipboard.
-        </p>
+    <!-- Hero / Intro — a wall of every concept, with the title on top of it.
+         The rows and the plate are two layers of ONE grid cell, so the band is
+         as tall as whichever is bigger. That is what keeps the plate from
+         spilling out of the rows on a narrow screen without a media query.
+         Tracks are filled by buildHeroWall(); this is only the shell. -->
+    <header class="hero-wall" id="heroWall">
+        <div class="hero-wall-rows" aria-label="Design concepts">
+            <div class="hero-row">
+                <div class="hero-track" data-dir="left"></div>
+            </div>
+            <div class="hero-row">
+                <div class="hero-track" data-dir="right"></div>
+            </div>
+            <div class="hero-row">
+                <div class="hero-track" data-dir="left"></div>
+            </div>
+        </div>
+        <div class="hero-plate-wrap">
+            <div class="hero-plate">
+                <h1 class="text-4xl md:text-6xl font-extrabold text-slate-900 mb-5 tracking-tight">The Evolution of the
+                    Interface.</h1>
+                <p class="text-lg md:text-xl text-slate-600 leading-relaxed">
+                    From the generic AI-generated defaults to bold, personality-driven frameworks. We explore the space
+                    between
+                    <strong>Baseline X</strong> and the diverse horizons of modern digital design.
+                </p>
+                <p class="seg-hint" id="segHint" hidden>
+                    <span class="seg-hint-key" aria-hidden="true">⌘</span>
+                    <span>Click any concept below to copy its full <b>DESIGN.md</b> to your clipboard.</span>
+                </p>
+            </div>
+        </div>
     </header>
 
-    <!-- Visual jump list. The id deliberately is NOT a SEG_PROMPTS key —
-         bindSegments would otherwise bolt a copy-the-brief handler onto it.
-         Tiles are injected by buildHeroIndex(); this is only the shell. -->
+    <!-- Static counterpart to the wall. The wall is good at showing that 43
+         treatments exist; it is bad at finding one by name, because it moves.
+         This grid is the tool for that, and it stays collapsed (and unbuilt)
+         until asked for. The id deliberately is NOT a SEG_PROMPTS key —
+         bindSegments would otherwise bolt a copy-the-brief handler onto it. -->
     <section id="hero-index" class="hero-index" aria-labelledby="heroIndexTitle">
         <div class="max-w-6xl mx-auto">
             <div class="hero-index-head">
-                <h2 id="heroIndexTitle">Every concept, at a glance</h2>
+                <h2 id="heroIndexTitle">Find a concept</h2>
                 <button type="button" id="heroIndexToggle" class="hero-index-toggle" aria-expanded="false"
                     aria-controls="heroRail">Show all</button>
             </div>
@@ -9986,77 +10164,213 @@
         }
 
         /* =================================================================
-           HERO INDEX
+           HERO WALL + CONCEPT GRID
            Built from SEG_PROMPTS rather than hand-written, because that
            object is already keyed by section id, already carries the label
-           and name, and is already in page order — so the index cannot
-           drift out of sync with the document the way hand-maintained
-           copy does.
+           and name, and is already in page order — so neither the wall nor
+           the grid can drift out of sync with the document the way
+           hand-maintained copy does.
 
-           The thumbnails are drawImage copies of the specimens already
-           rendered into each section, not fresh renders: re-drawing 43
-           more at full size would cost tens of megabytes of canvas
-           backing store for pictures the page has drawn once already.
-           This is why it runs after drawAllLandings in boot().
+           Thumbnails are <img> sharing one blob per concept, NOT a canvas
+           per tile. The wall needs each concept twice (once per loop copy,
+           more on a wide screen) and the grid needs it again: as canvases
+           that is ~24 MB of backing store on top of the ~50 MB the 43 HiDPI
+           specimens already cost. One decoded bitmap shared by every
+           reference is ~8 MB for the same pixels.
+
+           It runs after drawAllLandings in boot() because it re-encodes
+           what that pass drew.
            ================================================================= */
         const HERO_TILE_W = 256, HERO_TILE_H = 192;
+        const HERO_ROWS = 3;
+        const HERO_SPEED = 30;          // px per second, equal on every row
+        const heroUrls = new Map();     // canvas id -> Promise<object URL>
 
+        // Memoised: the second and third reference to a concept costs nothing
+        // but an <img> pointing at a URL the browser has already decoded.
+        function heroThumbUrl(canvasId) {
+            if (heroUrls.has(canvasId)) return heroUrls.get(canvasId);
+            const p = new Promise(resolve => {
+                const src = document.getElementById(canvasId);
+                if (!src || !src.width || !src.height) return resolve(null);
+                const off = document.createElement('canvas');
+                off.width = HERO_TILE_W;
+                off.height = HERO_TILE_H;
+                const cx = off.getContext('2d');
+                cx.imageSmoothingEnabled = true;
+                cx.imageSmoothingQuality = 'high';
+                cx.drawImage(src, 0, 0, HERO_TILE_W, HERO_TILE_H);
+                // toBlob keeps this off the main thread and avoids holding a
+                // multi-megabyte data: string per concept. The offscreen
+                // canvas is dropped here; only the decoded image survives.
+                if (off.toBlob) off.toBlob(b => resolve(b ? URL.createObjectURL(b) : null));
+                else resolve(off.toDataURL());
+            });
+            heroUrls.set(canvasId, p);
+            return p;
+        }
+
+        function heroTile(key, decorative) {
+            const p = SEG_PROMPTS[key];
+            const a = document.createElement('a');
+            a.className = 'hero-tile';
+            a.href = '#' + key;
+            if (p.series) a.dataset.series = p.series;
+
+            const img = document.createElement('img');
+            img.className = 'hero-thumb';
+            img.alt = '';
+            img.decoding = 'async';
+            heroThumbUrl(p.canvas).then(url => { if (url) img.src = url; });
+            a.appendChild(img);
+
+            const cap = document.createElement('span');
+            cap.className = 'hero-tile-cap';
+            const lab = document.createElement('b');
+            lab.textContent = p.label;
+            const nm = document.createElement('span');
+            nm.textContent = p.name;
+            cap.appendChild(lab);
+            cap.appendChild(nm);
+            a.appendChild(cap);
+
+            // In the wall the caption only appears on hover, so the name has
+            // to be carried explicitly or the link announces as bare.
+            a.setAttribute('aria-label', p.label + ': ' + p.name);
+
+            if (decorative) {
+                // A loop copy is the same link a second time. aria-hidden on
+                // its own would leave a focusable element inside hidden
+                // content — an ARIA violation — so the tab stop goes too.
+                a.setAttribute('aria-hidden', 'true');
+                a.tabIndex = -1;
+            }
+            return a;
+        }
+
+        function heroKeys() {
+            // A brief without a section is already reported by bindSegments;
+            // don't build a tile that would scroll nowhere.
+            return Object.keys(SEG_PROMPTS).filter(k => document.getElementById(k));
+        }
+
+        function buildHeroWall() {
+            const wall = document.getElementById('heroWall');
+            if (!wall) return;
+            const tracks = [...wall.querySelectorAll('.hero-track')];
+            if (tracks.length !== HERO_ROWS) return;
+
+            // Consecutive runs rather than round-robin, so each row still
+            // reads in document order. Spread the remainder one row at a time
+            // (43 -> 15 / 14 / 14) rather than rounding up and short-changing
+            // the last row, which would leave it visibly quicker round.
+            const keys = heroKeys();
+            const base = Math.floor(keys.length / HERO_ROWS);
+            const extra = keys.length % HERO_ROWS;
+            let at = 0;
+            const rows = tracks.map((_, i) => {
+                const n = base + (i < extra ? 1 : 0);
+                return keys.slice(at, at += n);
+            });
+
+            tracks.forEach((track, i) => {
+                const seq = document.createElement('div');
+                seq.className = 'hero-seq';
+                rows[i].forEach(k => seq.appendChild(heroTile(k, false)));
+                track.appendChild(seq);
+                track._heroKeys = rows[i];
+                track._heroCopies = 1;
+            });
+
+            if (REDUCED) {
+                // No clones: a frozen marquee is a window onto six tiles.
+                // Let the rows be plain scrollable strips instead.
+                wall.classList.add('is-static');
+                return;
+            }
+
+            heroFit(tracks);
+
+            let t = null;
+            window.addEventListener('resize', () => {
+                clearTimeout(t);
+                t = setTimeout(() => heroFit(tracks), 200);
+            });
+
+            // Nothing should animate while it is scrolled past.
+            if (window.IntersectionObserver) {
+                new IntersectionObserver(es => {
+                    wall.classList.toggle('is-paused', !es[0].isIntersecting);
+                }, { rootMargin: '120px' }).observe(wall);
+            }
+        }
+
+        // One sequence has to be at least as wide as the viewport or the wrap
+        // exposes bare track; a 14-tile row spans ~3.2k px, which an ultrawide
+        // beats. Copies are therefore derived from the viewport, not fixed.
+        function heroFit(tracks) {
+            tracks.forEach((track, row) => {
+                const first = track.firstElementChild;
+                if (!first) return;
+                const seqW = [...first.children]
+                    .reduce((sum, el) => sum + el.getBoundingClientRect().width
+                        + parseFloat(getComputedStyle(el).marginRight || 0), 0);
+                if (!seqW) return;
+
+                const want = Math.max(2, Math.ceil(window.innerWidth / seqW) + 1);
+                for (let c = track._heroCopies; c < want; c++) {
+                    const clone = document.createElement('div');
+                    clone.className = 'hero-seq';
+                    clone.setAttribute('aria-hidden', 'true');
+                    track._heroKeys.forEach(k => clone.appendChild(heroTile(k, true)));
+                    track.appendChild(clone);
+                }
+                track._heroCopies = Math.max(track._heroCopies, want);
+
+                // Shifting by exactly one sequence puts copy 2 where copy 1
+                // began. In pixels, because a percentage would depend on how
+                // many copies happen to exist at this viewport.
+                track.style.setProperty('--shift', seqW + 'px');
+                track.style.setProperty('--dur', (seqW / HERO_SPEED) + 's');
+
+                // Every row starts at translateX(0), which lines the tiles up
+                // in rigid columns — the sketch is a brick stagger. Starting
+                // each row a fraction of a tile into its own cycle offsets
+                // them immediately. A negative delay rather than a leading
+                // margin, which would show as blank track at the left edge.
+                const tile = first.firstElementChild;
+                const pitch = tile.getBoundingClientRect().width
+                    + parseFloat(getComputedStyle(tile).marginRight || 0);
+                track.style.animationDelay = -(row * pitch / HERO_ROWS / HERO_SPEED) + 's';
+            });
+        }
+
+        // The grid is the tool for finding a named concept; the wall is not,
+        // because it moves. Tiles are built on the first press and reuse the
+        // wall's object URLs, so a visitor who never opens it pays nothing.
         function buildHeroIndex() {
             const rail = document.getElementById('heroRail');
             const btn = document.getElementById('heroIndexToggle');
             if (!rail || !btn) return;
 
-            const frag = document.createDocumentFragment();
-            let n = 0;
-
-            Object.keys(SEG_PROMPTS).forEach(key => {
-                // A brief without a section is already reported by bindSegments;
-                // don't add a tile that would scroll nowhere.
-                if (!document.getElementById(key)) return;
-                const p = SEG_PROMPTS[key];
-
-                const a = document.createElement('a');
-                a.className = 'hero-tile';
-                a.href = '#' + key;
-                a.setAttribute('role', 'listitem');
-                if (p.series) a.dataset.series = p.series;
-
-                const c = document.createElement('canvas');
-                c.width = HERO_TILE_W;
-                c.height = HERO_TILE_H;
-                c.setAttribute('aria-hidden', 'true');
-                const src = document.getElementById(p.canvas);
-                if (src && src.width && src.height) {
-                    const cx = c.getContext('2d');
-                    cx.imageSmoothingEnabled = true;
-                    cx.imageSmoothingQuality = 'high';
-                    cx.drawImage(src, 0, 0, HERO_TILE_W, HERO_TILE_H);
-                }
-                a.appendChild(c);
-
-                // The caption is the link's accessible name — the canvas is
-                // decorative, so without this the tile would announce as bare.
-                const cap = document.createElement('span');
-                cap.className = 'hero-tile-cap';
-                const lab = document.createElement('b');
-                lab.textContent = p.label;
-                const nm = document.createElement('span');
-                nm.textContent = p.name;
-                cap.appendChild(lab);
-                cap.appendChild(nm);
-                a.appendChild(cap);
-
-                frag.appendChild(a);
-                n++;
-            });
-
-            rail.appendChild(frag);
-
-            // Count comes from what was actually built, never a literal — the
+            const keys = heroKeys();
+            // Count comes from what actually exists, never a literal — the
             // page has already had one hard-coded total go stale.
-            const collapsed = 'Show all ' + n;
+            const collapsed = 'Show all ' + keys.length;
             btn.textContent = collapsed;
+
+            let built = false;
             btn.addEventListener('click', () => {
+                if (!built) {
+                    const frag = document.createDocumentFragment();
+                    keys.forEach(k => {
+                        const tile = heroTile(k, false);
+                        tile.setAttribute('role', 'listitem');
+                        frag.appendChild(tile);
+                    });
+                    rail.appendChild(frag);
+                    built = true;
+                }
                 const open = rail.classList.toggle('is-grid');
                 btn.setAttribute('aria-expanded', String(open));
                 btn.textContent = open ? 'Collapse' : collapsed;
@@ -10070,11 +10384,13 @@
             [drawAllLandings, drawDither]
                 .forEach(fn => { try { fn(); } catch (err) { console.warn(fn.name, err); } });
 
-            // buildHeroIndex copies the bitmaps drawAllLandings just produced,
-            // so it must stay in this second pass, after the first has run.
+            // buildHeroWall re-encodes the bitmaps drawAllLandings just
+            // produced, so it must stay in this second pass, after the first
+            // has run. buildHeroIndex only wires a button, but it shares the
+            // same thumbnail cache, so it follows.
             [buildStarfield, bindRipples, bindTerminal, bindSpecular, bindParallax, bindAIStream,
                 bindKinetic, bindAmbient, buildChaos, bindScrollSpy, bindReveal, initCharts,
-                bindSegments, buildHeroIndex]
+                bindSegments, buildHeroWall, buildHeroIndex]
                 .forEach(fn => { try { fn(); } catch (err) { console.warn(fn.name, err); } });
         }
 
