@@ -3381,13 +3381,15 @@
             }
         }
 
-        /* Aiming at a moving target is the one real cost of a marquee, so
-           the whole wall holds still on hover or focus — pausing only the
-           row under the cursor leaves its neighbours sliding, which reads
-           as a glitch rather than a courtesy. .is-paused is the offscreen
-           case, set by an IntersectionObserver. */
-        .hero-wall:hover .hero-track,
-        .hero-wall:focus-within .hero-track,
+        /* Hover does NOT appear here: it ramps the hovered row alone to half
+           speed in JS instead of stopping it, because a dead stop reads as a
+           stall and stopping all three punishes the two you were not aiming
+           at. Keyboard focus still stops its row outright — a focused tile
+           that drifts out from under you is a different problem, and it keeps
+           a genuine pause mechanism on the page for anyone not using a
+           pointer. .is-paused is the offscreen case, from an
+           IntersectionObserver, and is the one state that takes every row. */
+        .hero-row:focus-within .hero-track,
         .hero-wall.is-paused .hero-track {
             animation-play-state: paused;
         }
@@ -10188,6 +10190,8 @@
         const HERO_TILE_W = 384, HERO_TILE_H = 288;
         const HERO_ROWS = 3;
         const HERO_SPEED = 30;          // px per second, equal on every row
+        const HERO_SLOW = .5;           // hovered row's speed, as a fraction of normal
+        const HERO_RAMP = 500;          // ms to travel between the two speeds
         const heroUrls = new Map();     // canvas id -> Promise<object URL>
 
         // Memoised: the second and third reference to a concept costs nothing
@@ -10294,6 +10298,7 @@
             }
 
             heroFit(tracks);
+            heroBindHoverSpeed(tracks);
 
             let t = null;
             window.addEventListener('resize', () => {
@@ -10307,6 +10312,51 @@
                     wall.classList.toggle('is-paused', !es[0].isIntersecting);
                 }, { rootMargin: '120px' }).observe(wall);
             }
+        }
+
+        /* Hovering a row eases it to half speed and releases it back again.
+           The rate is ramped rather than switched because a step change reads
+           as a stutter — you see the jump, not the slowdown.
+
+           This drives playbackRate rather than animation-duration: rewriting
+           the duration remaps the animation's whole progress, so the row
+           would leap to a new position on every rate change. Setting
+           playbackRate preserves current time and only alters what happens
+           next, which is exactly the property a speed ramp needs. It also
+           leaves the CSS animation in charge of the seam and of the
+           reduced-motion path, both of which already work. */
+        function heroBindHoverSpeed(tracks) {
+            tracks.forEach(track => {
+                let rate = 1, target = 1, raf = null, last = 0;
+
+                function tick(now) {
+                    // Cap dt so a backgrounded tab does not resume with one
+                    // enormous step that skips the ramp entirely.
+                    const dt = Math.min(now - last, 100);
+                    last = now;
+                    const step = (1 - HERO_SLOW) * dt / HERO_RAMP;
+                    rate = rate < target
+                        ? Math.min(target, rate + step)
+                        : Math.max(target, rate - step);
+                    track.getAnimations().forEach(a => { a.playbackRate = rate; });
+                    raf = rate === target ? null : requestAnimationFrame(tick);
+                }
+
+                function ease(to) {
+                    target = to;
+                    if (raf === null) {
+                        last = performance.now();
+                        raf = requestAnimationFrame(tick);
+                    }
+                }
+
+                // Bound on the row, not the wall, so only the row under the
+                // cursor slows. The plate sits above row 2 and takes its own
+                // pointer events, so reading the title leaves the wall alone.
+                const row = track.parentElement;
+                row.addEventListener('pointerenter', () => ease(HERO_SLOW));
+                row.addEventListener('pointerleave', () => ease(1));
+            });
         }
 
         // One sequence has to be at least as wide as the viewport or the wrap
