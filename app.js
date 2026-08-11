@@ -1,0 +1,4449 @@
+document.documentElement.classList.add('js');
+
+const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ------------------------------------------------------------------
+   HiDPI canvas helper — the marks were rendering soft on retina/4K
+   because the bitmap matched the CSS size 1:1.
+   ------------------------------------------------------------------ */
+function getCtx(id) {
+    const c = document.getElementById(id);
+    if (!c) return null;
+    const ctx = c.getContext('2d');
+    if (!c.dataset.hidpi) {
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const w = c.width, h = c.height;
+        c.style.width = w + 'px';
+        c.style.height = 'auto';
+        c.width = Math.round(w * dpr);
+        c.height = Math.round(h * dpr);
+        c.dataset.hidpi = '1';
+        c.dataset.dpr = dpr;
+    }
+    ctx.setTransform(+c.dataset.dpr, 0, 0, +c.dataset.dpr, 0, 0);
+    return ctx;
+}
+
+/* =================================================================
+   LANDING-PAGE SPECIMENS
+   Every concept now renders the SAME landing page — nav, hero, CTA
+   pair, three feature cards, footer — so the document reads as a
+   controlled comparison rather than a set of unrelated marks. The
+   layout never changes; only the treatment does. That is the whole
+   value: differences you see are attributable to the style alone.
+   ================================================================= */
+const LP_W = 320, LP_H = 240;
+
+function lpPath(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    if (r) ctx.roundRect(x, y, w, h, r); else ctx.rect(x, y, w, h);
+}
+
+function lpShadowOn(ctx, s) {
+    const k = s.shadow;
+    if (!k || k === 'none') return;
+    if (k === 'hard') {
+        ctx.shadowColor = s.shadowColor || '#000';
+        ctx.shadowBlur = 0;
+        ctx.shadowOffsetX = ctx.shadowOffsetY = s.shadowOff || 4;
+    } else if (k === 'soft') {
+        ctx.shadowColor = s.shadowColor || 'rgba(15,23,42,.22)';
+        ctx.shadowBlur = 10; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 4;
+    } else if (k === 'glow') {
+        ctx.shadowColor = s.shadowColor || '#0ff';
+        ctx.shadowBlur = 12; ctx.shadowOffsetX = ctx.shadowOffsetY = 0;
+    }
+}
+
+function lpShadowOff(ctx) {
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = ctx.shadowOffsetX = ctx.shadowOffsetY = 0;
+}
+
+function lpPanel(ctx, s, x, y, w, h, fill, r) {
+    const rad = (r === undefined) ? (s.radius || 0) : r;
+    if (s.panelFn) { s.panelFn(ctx, x, y, w, h, rad, fill || s.surface); return; }
+    lpShadowOn(ctx, s);
+    ctx.fillStyle = fill || s.surface;
+    lpPath(ctx, x, y, w, h, rad); ctx.fill();
+    lpShadowOff(ctx);
+    if (s.border) {
+        ctx.strokeStyle = s.borderColor || '#000';
+        ctx.lineWidth = s.border;
+        lpPath(ctx, x, y, w, h, rad); ctx.stroke();
+    }
+}
+
+function lpBar(ctx, x, y, w, h, color, r) {
+    ctx.fillStyle = color;
+    lpPath(ctx, x, y, w, h, r === undefined ? Math.min(h / 2, 2.5) : r);
+    ctx.fill();
+}
+
+/* shared texture helpers */
+const lpDots = (ctx, W, H, c, step, r) => {
+    ctx.fillStyle = c;
+    for (let y = 0; y < H + step; y += step)
+        for (let x = 0; x < W + step; x += step) {
+            ctx.beginPath(); ctx.arc(x, y, r, 0, 6.284); ctx.fill();
+        }
+};
+const lpScan = (ctx, W, H, c, period) => {
+    ctx.fillStyle = c;
+    for (let y = 0; y < H; y += period) ctx.fillRect(0, y, W, 1);
+};
+const lpGrain = (ctx, W, H, alpha, n) => {
+    ctx.fillStyle = 'rgba(0,0,0,' + alpha + ')';
+    for (let i = 0; i < n; i++) ctx.fillRect(Math.random() * W, Math.random() * H, 1, 1);
+};
+const lpLin = (ctx, x0, y0, x1, y1, stops) => {
+    const g = ctx.createLinearGradient(x0, y0, x1, y1);
+    stops.forEach(st => g.addColorStop(st[0], st[1]));
+    return g;
+};
+const lpFloor = (ctx, W, H, color, horizon) => {
+    ctx.strokeStyle = color; ctx.lineWidth = 1;
+    for (let i = -W; i <= W * 2; i += 26) {
+        ctx.beginPath(); ctx.moveTo(W / 2, horizon); ctx.lineTo(i, H); ctx.stroke();
+    }
+    let y = horizon, step = 2;
+    while (y < H) { y += step; step *= 1.5; ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+};
+
+function drawLanding(id, s) {
+    const ctx = getCtx(id); if (!ctx) return;
+    const W = LP_W, H = LP_H;
+    ctx.save();
+    ctx.clearRect(0, 0, W, H);
+
+    if (s.bgFn) s.bgFn(ctx, W, H);
+    else { ctx.fillStyle = s.bg; ctx.fillRect(0, 0, W, H); }
+    if (s.under) s.under(ctx, W, H);
+
+    /* --- nav bar --- */
+    if (s.navBar !== false) lpPanel(ctx, s, 0, 0, W, 28, s.navBg || s.surface, 0);
+    lpBar(ctx, 14, 9.5, 10, 10, s.accent, s.softLogo ? 5 : 0);
+    lpBar(ctx, 28, 12, 28, 5, s.ink);
+    for (let i = 0; i < 3; i++) lpBar(ctx, 148 + i * 26, 12.5, 18, 4, s.inkSoft);
+    lpPanel(ctx, s, 244, 7.5, 40, 13, s.accent, s.btnRadius);
+
+    /* --- hero --- */
+    lpBar(ctx, 20, 50, 186, 14, s.ink, s.headRadius);
+    lpBar(ctx, 20, 69, 132, 14, s.ink, s.headRadius);
+    lpBar(ctx, 20, 93, 208, 5, s.inkSoft);
+    lpBar(ctx, 20, 103, 164, 5, s.inkSoft);
+
+    /* --- CTA pair --- */
+    lpPanel(ctx, s, 20, 118, 68, 21, s.accent, s.btnRadius);
+    lpPanel(ctx, s, 96, 118, 56, 21, s.surface2 || s.surface, s.btnRadius);
+
+    /* --- three feature cards --- */
+    for (let i = 0; i < 3; i++) {
+        const x = 20 + i * 96;
+        lpPanel(ctx, s, x, 160, 88, 52, s.cardBg || s.surface);
+        lpBar(ctx, x + 10, 169, 13, 13, i === 1 ? (s.accent2 || s.accent) : s.accent, s.softLogo ? 4 : 0);
+        lpBar(ctx, x + 10, 189, 54, 4, s.ink);
+        lpBar(ctx, x + 10, 198, 38, 4, s.inkSoft);
+    }
+
+    /* --- footer --- */
+    lpBar(ctx, 20, 226, 62, 4, s.inkSoft);
+    lpBar(ctx, 238, 226, 44, 4, s.inkSoft);
+
+    if (s.over) s.over(ctx, W, H);
+    ctx.restore();
+}
+
+/* =================================================================
+   STYLE TABLE — one entry per concept, keyed by canvas id.
+   ================================================================= */
+const LP_STYLES = {
+
+    /* X — AI default / clean functionalism */
+    canvasX: {
+        bg: '#0B0E14', surface: '#141922', navBg: '#10151d',
+        ink: '#e2e8f0', inkSoft: '#5b6b85', accent: '#6366f1',
+        radius: 8, btnRadius: 6, softLogo: true, shadow: 'none'
+    },
+
+    /* A — Neobrutalism */
+    canvasA: {
+        bg: '#FFD100', surface: '#fff', navBg: '#fff',
+        ink: '#000', inkSoft: '#6b6b6b', accent: '#22d3ee', accent2: '#ff90e8',
+        radius: 0, btnRadius: 0, border: 2.5, borderColor: '#000',
+        shadow: 'hard', shadowColor: '#000', shadowOff: 4, headRadius: 0
+    },
+
+    /* B — Glassmorphism */
+    canvasB: {
+        surface: 'rgba(255,255,255,.22)', surface2: 'rgba(255,255,255,.12)',
+        navBg: 'rgba(255,255,255,.16)',
+        ink: '#ffffff', inkSoft: 'rgba(255,255,255,.6)', accent: 'rgba(255,255,255,.55)',
+        radius: 10, btnRadius: 10, border: 1, borderColor: 'rgba(255,255,255,.5)',
+        softLogo: true,
+        bgFn: (ctx, W, H) => {
+            ctx.fillStyle = lpLin(ctx, 0, 0, W, H, [[0, '#7b4bc4'], [.55, '#b74cae'], [1, '#e0629a']]);
+            ctx.fillRect(0, 0, W, H);
+            ctx.filter = 'blur(18px)';
+            [['#ff9a9e', 60, 40, 46], ['#4facfe', 250, 90, 52], ['#43e97b', 140, 200, 48]]
+                .forEach(([c, x, y, r]) => { ctx.fillStyle = c; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.284); ctx.fill(); });
+            ctx.filter = 'none';
+        }
+    },
+
+    /* C — Bento */
+    canvasC: {
+        bg: '#f3f4f6', surface: '#ffffff', navBg: '#ffffff',
+        ink: '#0f172a', inkSoft: '#94a3b8', accent: '#4f46e5', accent2: '#10b981',
+        radius: 11, btnRadius: 8, border: 1, borderColor: '#e5e7eb',
+        shadow: 'soft', shadowColor: 'rgba(15,23,42,.10)', softLogo: true
+    },
+
+    /* D — Neumorphism: extruded, no borders, light from top-left */
+    canvasD: {
+        bg: '#e0e0e0', surface: '#e0e0e0', navBg: '#e0e0e0',
+        ink: '#8d8d8d', inkSoft: '#b8b8b8', accent: '#cfcfcf', accent2: '#c2c2c2',
+        radius: 10, btnRadius: 10, softLogo: true,
+        panelFn: (ctx, x, y, w, h, r, fill) => {
+            ctx.shadowColor = '#bebebe'; ctx.shadowBlur = 7;
+            ctx.shadowOffsetX = 4; ctx.shadowOffsetY = 4;
+            ctx.fillStyle = fill; lpPath(ctx, x, y, w, h, r); ctx.fill();
+            ctx.shadowColor = '#ffffff'; ctx.shadowOffsetX = -4; ctx.shadowOffsetY = -4;
+            ctx.fill();
+            lpShadowOff(ctx);
+        }
+    },
+
+    /* E — Cyberpunk */
+    canvasE: {
+        surface: 'rgba(0,40,50,.55)', surface2: 'rgba(0,40,50,.3)', navBg: 'rgba(0,25,35,.8)',
+        ink: '#7df9ff', inkSoft: '#0e7490', accent: '#ff2a6d', accent2: '#22d3ee',
+        radius: 0, btnRadius: 0, border: 1, borderColor: '#22d3ee',
+        shadow: 'glow', shadowColor: 'rgba(34,211,238,.8)',
+        bgFn: (ctx, W, H) => {
+            ctx.fillStyle = lpLin(ctx, 0, 0, 0, H, [[0, '#050508'], [.7, '#0a0118'], [1, '#14001f']]);
+            ctx.fillRect(0, 0, W, H);
+            ctx.fillStyle = 'rgba(255,0,128,.25)';
+            ctx.beginPath(); ctx.ellipse(60, H, 90, 60, 0, 0, 6.284); ctx.fill();
+            ctx.fillStyle = 'rgba(0,255,255,.2)';
+            ctx.beginPath(); ctx.ellipse(260, H, 80, 55, 0, 0, 6.284); ctx.fill();
+        },
+        over: (ctx, W, H) => lpScan(ctx, W, H, 'rgba(0,255,255,.07)', 3)
+    },
+
+    /* F — Material You */
+    canvasF: {
+        bg: '#fdf8fd', surface: '#f0e6f6', navBg: '#f7eff8', cardBg: '#eaddff',
+        ink: '#1c1b1f', inkSoft: '#79747e', accent: '#6750a4', accent2: '#7d5260',
+        radius: 14, btnRadius: 10, softLogo: true,
+        shadow: 'soft', shadowColor: 'rgba(103,80,164,.18)'
+    },
+
+    /* G — Maximalism */
+    canvasG: {
+        surface: '#facc15', surface2: '#22d3ee', navBg: '#84cc16', cardBg: '#fff',
+        ink: '#000', inkSoft: '#3f3f46', accent: '#ff3366', accent2: '#22d3ee',
+        radius: 0, btnRadius: 0, border: 2.5, borderColor: '#000',
+        shadow: 'hard', shadowColor: '#000', shadowOff: 3, headRadius: 0,
+        bgFn: (ctx, W, H) => {
+            ctx.fillStyle = '#ff3366'; ctx.fillRect(0, 0, W, H);
+            ctx.strokeStyle = 'rgba(0,0,0,.16)'; ctx.lineWidth = 10;
+            for (let i = -H; i < W + H; i += 22) {
+                ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i + H, H); ctx.stroke();
+            }
+        },
+        over: (ctx, W, H) => {
+            ctx.save(); ctx.translate(268, 176); ctx.rotate(.28);
+            ctx.fillStyle = '#84cc16'; ctx.strokeStyle = '#000'; ctx.lineWidth = 2.5;
+            ctx.fillRect(-30, -16, 60, 32); ctx.strokeRect(-30, -16, 60, 32);
+            ctx.restore();
+            ctx.save(); ctx.translate(40, 142); ctx.rotate(-.34);
+            ctx.fillStyle = '#22d3ee'; ctx.beginPath(); ctx.arc(0, 0, 15, 0, 6.284); ctx.fill(); ctx.stroke();
+            ctx.restore();
+        }
+    },
+
+    /* H — Swiss */
+    canvasH: {
+        bg: '#ffffff', surface: '#ffffff', navBg: '#ffffff',
+        ink: '#000000', inkSoft: '#9a9a9a', accent: '#000000', accent2: '#e5231b',
+        radius: 0, btnRadius: 0, border: 1, borderColor: '#000', headRadius: 0,
+        over: (ctx, W, H) => {
+            ctx.strokeStyle = '#000'; ctx.lineWidth = 1;
+            [28, 112, 152].forEach(y => { ctx.beginPath(); ctx.moveTo(20, y + .5); ctx.lineTo(300, y + .5); ctx.stroke(); });
+            ctx.strokeStyle = 'rgba(0,0,0,.12)';
+            for (let i = 1; i < 6; i++) {
+                const x = 20 + i * 46.6;
+                ctx.beginPath(); ctx.moveTo(x, 28); ctx.lineTo(x, 220); ctx.stroke();
+            }
+        }
+    },
+
+    /* I — Y2K / Web 1.0: beveled chrome */
+    canvasI: {
+        bg: '#008080', surface: '#c0c0c0', navBg: '#000080', cardBg: '#c0c0c0',
+        ink: '#000080', inkSoft: '#5a5a5a', accent: '#000080', accent2: '#ff0000',
+        radius: 0, btnRadius: 0, headRadius: 0,
+        panelFn: (ctx, x, y, w, h, r, fill) => {
+            ctx.fillStyle = fill; ctx.fillRect(x, y, w, h);
+            ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5;
+            ctx.beginPath(); ctx.moveTo(x, y + h); ctx.lineTo(x, y); ctx.lineTo(x + w, y); ctx.stroke();
+            ctx.strokeStyle = '#404040';
+            ctx.beginPath(); ctx.moveTo(x + w, y); ctx.lineTo(x + w, y + h); ctx.lineTo(x, y + h); ctx.stroke();
+        }
+    },
+
+    /* J — Aurora */
+    canvasJ: {
+        surface: 'rgba(255,255,255,.13)', surface2: 'rgba(255,255,255,.07)',
+        navBg: 'rgba(255,255,255,.09)',
+        ink: '#ffffff', inkSoft: 'rgba(255,255,255,.5)', accent: 'rgba(255,255,255,.45)',
+        radius: 12, btnRadius: 12, border: 1, borderColor: 'rgba(255,255,255,.22)',
+        softLogo: true,
+        bgFn: (ctx, W, H) => {
+            ctx.fillStyle = '#0f0c29'; ctx.fillRect(0, 0, W, H);
+            ctx.filter = 'blur(26px)';
+            [['rgba(255,107,107,.75)', 40, 30, 70], ['rgba(161,140,209,.75)', 280, 40, 70],
+            ['rgba(29,209,161,.7)', 290, 210, 70], ['rgba(254,202,87,.7)', 30, 215, 70]]
+                .forEach(([c, x, y, r]) => { ctx.fillStyle = c; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.284); ctx.fill(); });
+            ctx.filter = 'none';
+        }
+    },
+
+    /* K — Memphis */
+    canvasK: {
+        surface: '#ffffff', navBg: '#ffffff', cardBg: '#fff',
+        ink: '#000', inkSoft: '#6b6b6b', accent: '#f472b6', accent2: '#22d3ee',
+        radius: 0, btnRadius: 0, border: 2.5, borderColor: '#000', headRadius: 0,
+        shadow: 'hard', shadowColor: '#3b82f6', shadowOff: 3,
+        bgFn: (ctx, W, H) => {
+            ctx.fillStyle = '#fffdf5'; ctx.fillRect(0, 0, W, H);
+            lpDots(ctx, W, H, '#000', 16, 1.4);
+        },
+        over: (ctx, W, H) => {
+            ctx.strokeStyle = '#facc15'; ctx.lineWidth = 5; ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(232, 104); ctx.lineTo(248, 88); ctx.lineTo(264, 104); ctx.lineTo(280, 88);
+            ctx.stroke();
+            ctx.strokeStyle = '#000'; ctx.lineWidth = 1.6; ctx.stroke();
+            ctx.fillStyle = '#22d3ee'; ctx.strokeStyle = '#000'; ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.arc(292, 128, 11, 0, 6.284); ctx.fill(); ctx.stroke();
+        }
+    },
+
+    /* L — Blueprint */
+    canvasL: {
+        surface: 'rgba(0,20,80,.34)', surface2: 'rgba(0,20,80,.2)', navBg: 'rgba(0,20,80,.45)',
+        ink: '#ffffff', inkSoft: 'rgba(255,255,255,.55)', accent: 'rgba(255,255,255,.8)',
+        radius: 0, btnRadius: 0, border: 1, borderColor: 'rgba(255,255,255,.7)', headRadius: 0,
+        bgFn: (ctx, W, H) => {
+            ctx.fillStyle = '#0044cc'; ctx.fillRect(0, 0, W, H);
+            ctx.strokeStyle = 'rgba(255,255,255,.14)'; ctx.lineWidth = 1;
+            for (let x = 0; x < W; x += 16) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+            for (let y = 0; y < H; y += 16) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+        },
+        over: (ctx, W, H) => {
+            ctx.strokeStyle = 'rgba(255,255,255,.8)'; ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(20, 44); ctx.lineTo(206, 44); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(20, 40); ctx.lineTo(20, 48);
+            ctx.moveTo(206, 40); ctx.lineTo(206, 48); ctx.stroke();
+            ctx.setLineDash([3, 3]);
+            ctx.strokeRect(20, 160, 280, 52);
+            ctx.setLineDash([]);
+        }
+    },
+
+    /* M — Claymorphism */
+    canvasM: {
+        surface: '#7c6bf5', surface2: '#4fd1c5', navBg: 'rgba(255,255,255,.55)', cardBg: '#7c6bf5',
+        ink: '#ffffff', inkSoft: 'rgba(255,255,255,.55)', accent: '#ff8fab', accent2: '#4fd1c5',
+        radius: 16, btnRadius: 14, softLogo: true,
+        bgFn: (ctx, W, H) => {
+            ctx.fillStyle = lpLin(ctx, 0, 0, W, H, [[0, '#e8ecff'], [.55, '#f6e9ff'], [1, '#ffeef6']]);
+            ctx.fillRect(0, 0, W, H);
+        },
+        panelFn: (ctx, x, y, w, h, r, fill) => {
+            ctx.shadowColor = 'rgba(124,107,245,.4)'; ctx.shadowBlur = 12;
+            ctx.shadowOffsetX = 5; ctx.shadowOffsetY = 7;
+            ctx.fillStyle = fill; lpPath(ctx, x, y, w, h, r); ctx.fill();
+            lpShadowOff(ctx);
+            ctx.save(); lpPath(ctx, x, y, w, h, r); ctx.clip();
+            ctx.fillStyle = lpLin(ctx, 0, y, 0, y + h * .5, [[0, 'rgba(255,255,255,.5)'], [1, 'rgba(255,255,255,0)']]);
+            ctx.fillRect(x, y, w, h * .5);
+            ctx.fillStyle = lpLin(ctx, 0, y + h * .5, 0, y + h, [[0, 'rgba(0,0,0,0)'], [1, 'rgba(0,0,0,.22)']]);
+            ctx.fillRect(x, y + h * .5, w, h * .5);
+            ctx.restore();
+        }
+    },
+
+    /* N — Organic */
+    canvasN: {
+        surface: '#b6c9a6', surface2: '#cdd9c0', navBg: 'rgba(255,255,255,.4)', cardBg: '#c5d4b6',
+        ink: '#2c4027', inkSoft: '#6d8465', accent: '#5c7a53', accent2: '#8aa87e',
+        radius: 14, btnRadius: 14, softLogo: true,
+        bgFn: (ctx, W, H) => {
+            ctx.fillStyle = '#f4ebd0'; ctx.fillRect(0, 0, W, H);
+            ctx.filter = 'blur(22px)';
+            ctx.fillStyle = 'rgba(122,155,106,.5)';
+            ctx.beginPath(); ctx.arc(30, 20, 70, 0, 6.284); ctx.fill();
+            ctx.fillStyle = 'rgba(86,122,76,.4)';
+            ctx.beginPath(); ctx.arc(295, 230, 70, 0, 6.284); ctx.fill();
+            ctx.filter = 'none';
+        },
+        over: (ctx, W, H) => lpGrain(ctx, W, H, .05, 1400)
+    },
+
+    /* O — Synthwave */
+    canvasO: {
+        surface: 'rgba(25,0,45,.6)', surface2: 'rgba(25,0,45,.35)', navBg: 'rgba(17,0,28,.75)',
+        ink: '#ffd9f2', inkSoft: '#b5179e', accent: '#f72585', accent2: '#4cc9f0',
+        radius: 0, btnRadius: 0, border: 1, borderColor: '#4cc9f0',
+        shadow: 'glow', shadowColor: 'rgba(247,37,133,.75)',
+        bgFn: (ctx, W, H) => {
+            ctx.fillStyle = lpLin(ctx, 0, 0, 0, H, [[0, '#11001c'], [.55, '#3a015c'], [1, '#4f000b']]);
+            ctx.fillRect(0, 0, W, H);
+            const g = lpLin(ctx, 0, 96, 0, 168, [[0, '#fff05e'], [.55, '#f72585'], [1, '#7209b7']]);
+            ctx.fillStyle = g; ctx.globalAlpha = .5;
+            ctx.beginPath(); ctx.arc(W / 2, 168, 54, Math.PI, 0); ctx.fill();
+            ctx.globalAlpha = 1;
+            lpFloor(ctx, W, H, 'rgba(76,201,240,.45)', 168);
+        }
+    },
+
+    /* P — Pop Art */
+    canvasP: {
+        surface: '#ffffff', navBg: '#fff', cardBg: '#fff',
+        ink: '#000', inkSoft: '#555', accent: '#ef4444', accent2: '#3b82f6',
+        radius: 0, btnRadius: 0, border: 3, borderColor: '#000', headRadius: 0,
+        shadow: 'hard', shadowColor: '#000', shadowOff: 4,
+        bgFn: (ctx, W, H) => {
+            ctx.fillStyle = '#facc15'; ctx.fillRect(0, 0, W, H);
+            lpDots(ctx, W, H, '#ef4444', 12, 2.6);
+        }
+    },
+
+    /* Q — Quiet technology: everything dialled down */
+    canvasQ: {
+        bg: '#faf8f5', surface: '#ffffff', navBg: '#faf8f5', cardBg: '#fdfcfa',
+        ink: '#8a8a8a', inkSoft: '#d3cec6', accent: '#b9b2a7', accent2: '#c8c2b8',
+        radius: 3, btnRadius: 3, headRadius: 1,
+        over: (ctx, W, H) => {
+            ctx.strokeStyle = 'rgba(140,125,105,.13)'; ctx.lineWidth = 1;
+            for (let r = 30; r < 200; r += 22) {
+                ctx.beginPath(); ctx.arc(W / 2, 100, r, 0, 6.284); ctx.stroke();
+            }
+        }
+    },
+
+    /* R — Risograph */
+    canvasR: {
+        bg: '#f7f4ed', surface: '#ffffff', navBg: '#f7f4ed', cardBg: '#fff',
+        ink: '#1a1a1a', inkSoft: '#8a8a8a', accent: '#ff48b0', accent2: '#00a8cc',
+        radius: 0, btnRadius: 0, border: 1.5, borderColor: '#1a1a1a', headRadius: 0,
+        over: (ctx, W, H) => {
+            // misregistered second plate
+            ctx.globalCompositeOperation = 'multiply';
+            ctx.globalAlpha = .5;
+            ctx.fillStyle = '#00a8cc';
+            ctx.fillRect(22.5, 51.5, 186, 14);
+            ctx.fillRect(22.5, 70.5, 132, 14);
+            ctx.fillStyle = '#ffd400';
+            ctx.fillRect(17.5, 119.5, 68, 21);
+            ctx.globalAlpha = 1;
+            ctx.globalCompositeOperation = 'source-over';
+            lpGrain(ctx, W, H, .07, 2200);
+        }
+    },
+
+    /* S — Cosmic */
+    canvasS: {
+        surface: 'rgba(255,255,255,.06)', surface2: 'rgba(255,255,255,.03)',
+        navBg: 'rgba(255,255,255,.04)',
+        ink: '#e2e8f0', inkSoft: '#5a6b85', accent: '#6366f1', accent2: '#a78bfa',
+        radius: 10, btnRadius: 8, border: 1, borderColor: 'rgba(255,255,255,.1)',
+        softLogo: true, shadow: 'glow', shadowColor: 'rgba(99,102,241,.5)',
+        bgFn: (ctx, W, H) => {
+            ctx.fillStyle = '#05060b'; ctx.fillRect(0, 0, W, H);
+            const g = ctx.createRadialGradient(W / 2, 60, 5, W / 2, 60, 150);
+            g.addColorStop(0, 'rgba(56,79,145,.5)'); g.addColorStop(1, 'transparent');
+            ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+            ctx.fillStyle = '#fff';
+            for (let i = 0; i < 90; i++) {
+                ctx.globalAlpha = .2 + Math.random() * .8;
+                ctx.beginPath(); ctx.arc(Math.random() * W, Math.random() * H, Math.random() * 1.1, 0, 6.284); ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+        }
+    },
+
+    /* T — Terminal */
+    canvasT: {
+        bg: '#050505', surface: '#080f0c', surface2: '#060b09', navBg: '#070d0a',
+        ink: '#10b981', inkSoft: '#0b6b4d', accent: '#10b981', accent2: '#34d399',
+        radius: 0, btnRadius: 0, border: 1, borderColor: '#10b981', headRadius: 0,
+        over: (ctx, W, H) => lpScan(ctx, W, H, 'rgba(16,185,129,.06)', 3)
+    },
+
+    /* U — Utilitarian */
+    canvasU: {
+        bg: '#e5e5e5', surface: '#ffffff', navBg: '#fff', cardBg: '#fff',
+        ink: '#000', inkSoft: '#666', accent: '#fbbf24', accent2: '#000',
+        radius: 0, btnRadius: 0, border: 2, borderColor: '#000', headRadius: 0,
+        shadow: 'hard', shadowColor: '#000', shadowOff: 3,
+        over: (ctx, W, H) => {
+            ctx.save();
+            ctx.beginPath(); ctx.rect(0, 232, W, 8); ctx.clip();
+            ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 8;
+            for (let i = -20; i < W + 20; i += 16) {
+                ctx.beginPath(); ctx.moveTo(i, 244); ctx.lineTo(i + 16, 228); ctx.stroke();
+            }
+            ctx.restore();
+        }
+    },
+
+    /* V — Vaporwave */
+    canvasV: {
+        surface: 'rgba(255,255,255,.26)', surface2: 'rgba(255,255,255,.15)',
+        navBg: 'rgba(255,255,255,.2)',
+        ink: '#ffffff', inkSoft: 'rgba(255,255,255,.65)', accent: '#ff71ce', accent2: '#01cdfe',
+        radius: 6, btnRadius: 6, border: 1, borderColor: 'rgba(255,255,255,.5)',
+        bgFn: (ctx, W, H) => {
+            ctx.fillStyle = lpLin(ctx, 0, 0, W, H, [[0, '#ff71ce'], [.45, '#b967ff'], [1, '#01cdfe']]);
+            ctx.fillRect(0, 0, W, H);
+            ctx.fillStyle = 'rgba(255,251,150,.45)';
+            ctx.beginPath(); ctx.arc(W / 2, 150, 58, 0, 6.284); ctx.fill();
+            lpFloor(ctx, W, H, 'rgba(255,255,255,.45)', 172);
+        }
+    },
+
+    /* W — Watercolour */
+    canvasW: {
+        surface: 'rgba(255,255,255,.62)', surface2: 'rgba(255,255,255,.45)',
+        navBg: 'rgba(255,255,255,.5)', cardBg: 'rgba(255,255,255,.6)',
+        ink: '#2d3748', inkSoft: '#a0aec0', accent: '#fc8181', accent2: '#68d391',
+        radius: 14, btnRadius: 12, softLogo: true,
+        bgFn: (ctx, W, H) => {
+            ctx.fillStyle = '#fdfbf7'; ctx.fillRect(0, 0, W, H);
+            ctx.globalCompositeOperation = 'multiply';
+            ctx.filter = 'blur(20px)'; ctx.globalAlpha = .5;
+            [['#fc8181', 50, 40, 60], ['#f6ad55', 250, 70, 55], ['#68d391', 160, 215, 65], ['#63b3ed', 300, 190, 50]]
+                .forEach(([c, x, y, r]) => { ctx.fillStyle = c; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.284); ctx.fill(); });
+            ctx.filter = 'none'; ctx.globalAlpha = 1;
+            ctx.globalCompositeOperation = 'source-over';
+        },
+        over: (ctx, W, H) => lpGrain(ctx, W, H, .04, 1500)
+    },
+
+    /* Y — Frutiger Aero */
+    canvasY: {
+        surface: 'rgba(255,255,255,.55)', surface2: 'rgba(255,255,255,.38)',
+        navBg: 'rgba(255,255,255,.5)',
+        ink: '#00352c', inkSoft: 'rgba(0,53,44,.45)', accent: '#2f80ed', accent2: '#56ccf2',
+        radius: 10, btnRadius: 10, border: 1, borderColor: 'rgba(255,255,255,.85)',
+        softLogo: true, shadow: 'soft', shadowColor: 'rgba(0,40,80,.18)',
+        bgFn: (ctx, W, H) => {
+            ctx.fillStyle = lpLin(ctx, 0, 0, 0, H, [[0, '#dcedc1'], [.45, '#56ccf2'], [1, '#2f80ed']]);
+            ctx.fillRect(0, 0, W, H);
+            ctx.fillStyle = lpLin(ctx, 0, 0, 0, 120, [[0, 'rgba(255,255,255,.5)'], [1, 'rgba(255,255,255,0)']]);
+            ctx.beginPath(); ctx.ellipse(W / 2, 40, 220, 80, 0, 0, 6.284); ctx.fill();
+        },
+        over: (ctx, W, H) => {
+            [[286, 60, 13], [40, 210, 9], [250, 218, 16], [180, 140, 7]].forEach(([x, y, r]) => {
+                const g = ctx.createRadialGradient(x - r * .3, y - r * .35, 1, x, y, r);
+                g.addColorStop(0, 'rgba(255,255,255,.9)');
+                g.addColorStop(.5, 'rgba(255,255,255,.18)');
+                g.addColorStop(1, 'rgba(255,255,255,.06)');
+                ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.284); ctx.fill();
+                ctx.strokeStyle = 'rgba(255,255,255,.6)'; ctx.lineWidth = 1; ctx.stroke();
+            });
+        }
+    },
+
+    /* Z — Zine */
+    canvasZ: {
+        surface: '#ffffff', navBg: '#fff', cardBg: '#fff',
+        ink: '#000', inkSoft: '#555', accent: '#ff2d2d', accent2: '#000',
+        radius: 0, btnRadius: 0, border: 2.5, borderColor: '#000', headRadius: 0,
+        bgFn: (ctx, W, H) => {
+            ctx.fillStyle = '#f2f0eb'; ctx.fillRect(0, 0, W, H);
+            ctx.strokeStyle = 'rgba(0,0,0,.06)'; ctx.lineWidth = 1;
+            for (let y = 0; y < H; y += 5) { ctx.beginPath(); ctx.moveTo(0, y + 1); ctx.lineTo(W, y - 1); ctx.stroke(); }
+        },
+        over: (ctx, W, H) => {
+            ctx.save(); ctx.translate(250, 96); ctx.rotate(-.12);
+            ctx.fillStyle = '#000'; ctx.fillRect(-42, -13, 84, 26);
+            ctx.fillStyle = '#fff'; ctx.fillRect(-36, -5, 30, 5); ctx.fillRect(-36, 2, 46, 4);
+            ctx.restore();
+            lpGrain(ctx, W, H, .1, 2600);
+        }
+    },
+
+    /* 27 — Liquid Glass: the landing page, then a lens over it */
+    canvasLQ: {
+        surface: 'rgba(255,255,255,.17)', surface2: 'rgba(255,255,255,.09)',
+        navBg: 'rgba(255,255,255,.12)',
+        ink: '#ffffff', inkSoft: 'rgba(255,255,255,.55)', accent: 'rgba(255,255,255,.5)',
+        radius: 12, btnRadius: 12, border: 1, borderColor: 'rgba(255,255,255,.55)',
+        softLogo: true,
+        bgFn: (ctx, W, H) => {
+            ctx.fillStyle = lpLin(ctx, 0, 0, W, H, [[0, '#0b1220'], [.45, '#172554'], [1, '#4c1d95']]);
+            ctx.fillRect(0, 0, W, H);
+            ctx.filter = 'blur(24px)';
+            [['#f472b6', 40, 30, 60], ['#22d3ee', 160, 230, 55], ['#fbbf24', 290, 60, 55]]
+                .forEach(([c, x, y, r]) => { ctx.fillStyle = c; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.284); ctx.fill(); });
+            ctx.filter = 'none';
+        },
+        over: (ctx, W, H) => {
+            // refraction: sample the finished page and magnify it through a lens
+            const buf = document.createElement('canvas');
+            buf.width = W; buf.height = H;
+            buf.getContext('2d').drawImage(ctx.canvas, 0, 0, W, H);
+            const cx = 232, cy = 150, r = 52, mag = .68;
+            for (let y = Math.ceil(cy - r); y <= cy + r; y++) {
+                const dy = (y - cy) / r;
+                const half = Math.sqrt(Math.max(0, 1 - dy * dy)) * r;
+                if (half < .5) continue;
+                const sw = half * 2 * mag;
+                ctx.drawImage(buf, cx - sw / 2, cy + dy * r * mag, sw, 1, cx - half, y, half * 2, 1);
+            }
+            ctx.save();
+            ctx.beginPath(); ctx.arc(cx, cy, r, 0, 6.284); ctx.clip();
+            ctx.fillStyle = lpLin(ctx, 0, cy - r, 0, cy, [[0, 'rgba(255,255,255,.5)'], [1, 'rgba(255,255,255,0)']]);
+            ctx.beginPath(); ctx.ellipse(cx, cy - r * .45, r * .7, r * .35, 0, 0, 6.284); ctx.fill();
+            ctx.restore();
+            ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.lineWidth = 1.6;
+            ctx.beginPath(); ctx.arc(cx, cy, r, 0, 6.284); ctx.stroke();
+        }
+    },
+
+    /* 28 — Spatial: the same page split onto receding planes */
+    canvasSP: {
+        surface: 'rgba(255,255,255,.08)', surface2: 'rgba(255,255,255,.05)',
+        navBg: 'rgba(255,255,255,.06)',
+        ink: '#e8edf7', inkSoft: '#5a6b85', accent: '#7dd3fc', accent2: '#a78bfa',
+        radius: 12, btnRadius: 10, border: 1, borderColor: 'rgba(255,255,255,.15)',
+        softLogo: true, shadow: 'soft', shadowColor: 'rgba(0,0,0,.85)',
+        bgFn: (ctx, W, H) => {
+            const g = ctx.createRadialGradient(W / 2, 0, 10, W / 2, 0, 260);
+            ctx.fillStyle = '#05070b'; ctx.fillRect(0, 0, W, H);
+            g.addColorStop(0, 'rgba(28,36,54,.9)'); g.addColorStop(1, 'transparent');
+            ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+        },
+        over: (ctx, W, H) => {
+            // a nearer plane floating in front, casting onto the page
+            ctx.shadowColor = 'rgba(0,0,0,.9)'; ctx.shadowBlur = 18; ctx.shadowOffsetY = 10;
+            ctx.fillStyle = 'rgba(255,255,255,.13)';
+            lpPath(ctx, 196, 96, 108, 92, 14); ctx.fill();
+            lpShadowOff(ctx);
+            ctx.strokeStyle = 'rgba(255,255,255,.28)'; ctx.lineWidth = 1;
+            lpPath(ctx, 196, 96, 108, 92, 14); ctx.stroke();
+            lpBar(ctx, 208, 110, 14, 14, '#a78bfa', 4);
+            lpBar(ctx, 208, 134, 62, 5, '#e8edf7');
+            lpBar(ctx, 208, 145, 44, 4, '#5a6b85');
+            lpBar(ctx, 208, 162, 50, 12, '#7dd3fc', 6);
+        }
+    },
+
+    /* 29 — AI-native: the page collapses into a prompt + stream */
+    canvasAN: {
+        bg: '#0d1117', surface: '#161c26', surface2: '#11161f', navBg: '#0f141c',
+        ink: '#e6edf3', inkSoft: '#4c5566', accent: '#7c3aed', accent2: '#a78bfa',
+        radius: 10, btnRadius: 999, softLogo: true,
+        over: (ctx, W, H) => {
+            // prompt bar replaces the hero CTA — the AI-native signature
+            ctx.fillStyle = '#0d1117'; ctx.fillRect(14, 112, 292, 34);
+            ctx.strokeStyle = '#2b3442'; ctx.lineWidth = 1;
+            lpPath(ctx, 18, 114, 284, 28, 14); ctx.stroke();
+            lpBar(ctx, 30, 125, 96, 5, '#4c5566');
+            ctx.fillStyle = '#7c3aed';
+            lpPath(ctx, 274, 120, 18, 16, 8); ctx.fill();
+            // streaming tokens of unequal length
+            [58, 40, 66, 34, 52].forEach((w, i) => lpBar(ctx, 20 + (i % 3) * 70, 92 + Math.floor(i / 3) * 10, w, 5, '#2f3b4f'));
+        }
+    },
+
+    /* 30 — Kinetic type: one headline, many weights */
+    canvasKT: {
+        bg: '#0b0b0b', surface: '#141414', surface2: '#101010', navBg: '#0e0e0e',
+        ink: '#fafafa', inkSoft: '#4a4a4a', accent: '#fafafa', accent2: '#a3a3a3',
+        radius: 0, btnRadius: 0, headRadius: 0,
+        over: (ctx, W, H) => {
+            // the hero bars re-drawn as a weight ramp: thin -> black
+            ctx.fillStyle = '#0b0b0b'; ctx.fillRect(14, 44, 292, 68);
+            for (let i = 0; i < 6; i++) {
+                const h = 2 + i * 2.4;
+                lpBar(ctx, 20, 48 + i * 11, 120 + i * 22, h, '#fafafa', 0);
+            }
+            ctx.strokeStyle = '#2a2a2a'; ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(0, 112.5); ctx.lineTo(W, 112.5); ctx.stroke();
+        }
+    },
+
+    /* 31 — True skeuomorphism: metal chassis, leather panel */
+    canvasSK: {
+        surface: '#5b3a24', surface2: '#6b4830', navBg: '#4a2f1d', cardBg: '#5b3a24',
+        ink: '#f4e9db', inkSoft: '#b09274', accent: '#c9a227', accent2: '#8fb0c9',
+        radius: 6, btnRadius: 5,
+        bgFn: (ctx, W, H) => {
+            ctx.fillStyle = lpLin(ctx, 0, 0, 0, H, [[0, '#dcdfe3'], [1, '#9ba1a9']]);
+            ctx.fillRect(0, 0, W, H);
+            ctx.strokeStyle = 'rgba(255,255,255,.35)'; ctx.lineWidth = 1;
+            for (let x = 0; x < W; x += 3) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+            ctx.strokeStyle = 'rgba(0,0,0,.07)';
+            for (let x = 1; x < W; x += 2) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+        },
+        panelFn: (ctx, x, y, w, h, r, fill) => {
+            ctx.shadowColor = 'rgba(0,0,0,.45)'; ctx.shadowBlur = 6; ctx.shadowOffsetY = 3;
+            ctx.fillStyle = fill; lpPath(ctx, x, y, w, h, r); ctx.fill();
+            lpShadowOff(ctx);
+            ctx.save(); lpPath(ctx, x, y, w, h, r); ctx.clip();
+            ctx.fillStyle = lpLin(ctx, 0, y, 0, y + h, [[0, 'rgba(255,255,255,.22)'], [.5, 'rgba(255,255,255,0)'], [1, 'rgba(0,0,0,.3)']]);
+            ctx.fillRect(x, y, w, h);
+            ctx.restore();
+            ctx.strokeStyle = 'rgba(0,0,0,.5)'; ctx.lineWidth = 1;
+            lpPath(ctx, x, y, w, h, r); ctx.stroke();
+        }
+    },
+
+    /* 32 — Bauhaus */
+    canvasBH: {
+        bg: '#f2efe6', surface: '#ffffff', navBg: '#fff', cardBg: '#fff',
+        ink: '#111', inkSoft: '#7a7a7a', accent: '#e63946', accent2: '#1d3557',
+        radius: 0, btnRadius: 0, border: 2, borderColor: '#111', headRadius: 0,
+        over: (ctx, W, H) => {
+            ctx.fillStyle = '#e63946';
+            ctx.beginPath(); ctx.arc(272, 66, 26, 0, 6.284); ctx.fill();
+            ctx.fillStyle = '#f4a261';
+            ctx.beginPath(); ctx.moveTo(238, 138); ctx.lineTo(268, 138); ctx.lineTo(253, 110); ctx.closePath(); ctx.fill();
+            ctx.fillStyle = '#1d3557';
+            ctx.beginPath(); ctx.moveTo(320, 240); ctx.arc(320, 240, 34, Math.PI, Math.PI * 1.5); ctx.closePath(); ctx.fill();
+        }
+    },
+
+    /* 33 — Art Deco */
+    canvasDC: {
+        surface: '#10281f', surface2: '#0d2019', navBg: '#0a1a15', cardBg: '#10281f',
+        ink: '#e8d9a8', inkSoft: '#8c6d1f', accent: '#c9a227', accent2: '#e8d9a8',
+        radius: 0, btnRadius: 0, border: 1, borderColor: '#c9a227', headRadius: 0,
+        bgFn: (ctx, W, H) => {
+            ctx.fillStyle = '#0d1f1a'; ctx.fillRect(0, 0, W, H);
+            ctx.save(); ctx.translate(W / 2, H);
+            for (let i = 0; i <= 22; i++) {
+                ctx.rotate(Math.PI / 22);
+                ctx.fillStyle = i % 2 ? 'rgba(201,162,39,.09)' : 'transparent';
+                ctx.fillRect(0, -260, 8, 260);
+            }
+            ctx.restore();
+        },
+        over: (ctx, W, H) => {
+            ctx.strokeStyle = '#c9a227'; ctx.lineWidth = 1;
+            [[10, 10], [310, 10], [10, 230], [310, 230]].forEach(([x, y], i) => {
+                const sx = i % 2 ? -1 : 1, sy = i < 2 ? 1 : -1;
+                ctx.beginPath();
+                ctx.moveTo(x, y + 14 * sy); ctx.lineTo(x, y); ctx.lineTo(x + 14 * sx, y);
+                ctx.stroke();
+            });
+        }
+    },
+
+    /* 34 — Accessibility-first: maximum contrast, visible focus */
+    canvasAC: {
+        bg: '#ffffff', surface: '#ffffff', navBg: '#ffffff', cardBg: '#fff',
+        ink: '#111827', inkSoft: '#4b5563', accent: '#1e40af', accent2: '#166534',
+        radius: 5, btnRadius: 5, border: 2.5, borderColor: '#111827',
+        over: (ctx, W, H) => {
+            // a visible focus ring on the primary CTA — the point of the concept
+            ctx.strokeStyle = '#111827'; ctx.lineWidth = 3;
+            lpPath(ctx, 15, 113, 78, 31, 6); ctx.stroke();
+        }
+    },
+
+    /* 35 — Editorial: one column, a measure, no chrome */
+    canvasED: {
+        bg: '#fbfaf7', surface: '#fbfaf7', navBg: '#fbfaf7', cardBg: '#fbfaf7',
+        ink: '#1f2328', inkSoft: '#8a8578', accent: '#8a6d3b', accent2: '#1f2328',
+        radius: 0, btnRadius: 0, headRadius: 1, navBar: false,
+        over: (ctx, W, H) => {
+            // the feature row is wrong for prose: overwrite it with a measure
+            ctx.fillStyle = '#fbfaf7'; ctx.fillRect(0, 150, W, 90);
+            ctx.fillStyle = '#1f2328';
+            ctx.font = '600 34px Georgia, serif';
+            ctx.fillText('R', 62, 186);
+            for (let i = 0; i < 5; i++) {
+                const x = i < 3 ? 86 : 62;
+                const w = i < 3 ? 172 : 196;
+                lpBar(ctx, x, 160 + i * 11, w - (i === 4 ? 60 : 0), 4, i > 2 ? '#3f444b' : '#3f444b');
+            }
+            ctx.strokeStyle = '#ddd8cd'; ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(62, 222.5); ctx.lineTo(258, 222.5); ctx.stroke();
+        }
+    },
+
+    /* 36 — Design system: the page annotated with its own tokens */
+    canvasDS: {
+        bg: '#f8fafc', surface: '#ffffff', navBg: '#fff', cardBg: '#fff',
+        ink: '#0f172a', inkSoft: '#94a3b8', accent: '#4f46e5', accent2: '#818cf8',
+        radius: 8, btnRadius: 8, border: 1, borderColor: '#e2e8f0', softLogo: true,
+        over: (ctx, W, H) => {
+            ctx.strokeStyle = '#c7d2fe'; ctx.lineWidth = 1;
+            ctx.setLineDash([3, 3]);
+            ctx.strokeRect(20, 118, 68, 21);
+            ctx.strokeRect(20, 160, 88, 52);
+            ctx.setLineDash([]);
+            ctx.fillStyle = '#6366f1';
+            ctx.font = '7px "IBM Plex Mono", monospace';
+            ctx.fillText('radius-md', 92, 128);
+            ctx.fillText('space-4', 112, 168);
+            ctx.fillText('color-action', 92, 136);
+            // the token ramp along the bottom
+            ['#eef2ff', '#c7d2fe', '#818cf8', '#4f46e5', '#312e81'].forEach((c, i) => {
+                ctx.fillStyle = c; ctx.fillRect(238 + i * 13, 222, 12, 10);
+            });
+        }
+    },
+
+    /* 37 — Art Nouveau: the ornament is the frame */
+    canvasNV: {
+        bg: '#f7f1e3', surface: '#fdfaf2', navBg: '#f7f1e3', cardBg: '#fdfaf2',
+        ink: '#3b3227', inkSoft: '#9a8a6d', accent: '#a9884f', accent2: '#8d9b7a',
+        radius: 0, btnRadius: 0, border: 1, borderColor: '#c8ae7c', headRadius: 0,
+        over: (ctx, W, H) => {
+            ctx.strokeStyle = '#a9884f'; ctx.lineWidth = 1;
+            // hairline frame, inset — the border that holds the page
+            ctx.strokeRect(7.5, 34.5, W - 15, H - 42);
+            // arched cap over the hero, the Mucha panel in miniature
+            ctx.beginPath();
+            ctx.arc(113, 62, 93, Math.PI * 1.08, Math.PI * 1.92);
+            ctx.stroke();
+            // whiplash: two unequal arcs meeting off-centre
+            ctx.beginPath();
+            ctx.moveTo(20, 150);
+            ctx.bezierCurveTo(70, 128, 96, 176, 150, 150);
+            ctx.bezierCurveTo(204, 124, 240, 168, 300, 146);
+            ctx.stroke();
+            // corner lozenges
+            ctx.fillStyle = '#a9884f';
+            [[16, 43], [304, 43], [16, 231], [304, 231]].forEach(([x, y]) => {
+                ctx.save(); ctx.translate(x, y); ctx.rotate(Math.PI / 4);
+                ctx.fillRect(-3, -3, 6, 6); ctx.restore();
+            });
+        }
+    },
+
+    /* 38 — Constructivism: the diagonal cuts the frame */
+    canvasKN: {
+        bg: '#efeae1', surface: '#fdfcfa', navBg: '#efeae1', cardBg: '#fdfcfa',
+        ink: '#111111', inkSoft: '#6d675e', accent: '#d4232a', accent2: '#111111',
+        radius: 0, btnRadius: 0, border: 2, borderColor: '#111', headRadius: 0,
+        navBar: false,
+        under: (ctx, W, H) => {
+            // the black wedge goes *under* the content, so type sits on it
+            ctx.fillStyle = '#111';
+            ctx.beginPath();
+            ctx.moveTo(0, 18); ctx.lineTo(W, 62); ctx.lineTo(W, 96); ctx.lineTo(0, 52);
+            ctx.closePath(); ctx.fill();
+        },
+        over: (ctx, W, H) => {
+            // rules that run off both edges — the frame is a crop, not a boundary
+            ctx.strokeStyle = '#d4232a'; ctx.lineWidth = 3;
+            [[-10, 128, 340, 96], [-10, 214, 340, 190]].forEach(([x0, y0, x1, y1]) => {
+                ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke();
+            });
+            // the hero headline re-set on the diagonal
+            ctx.save();
+            ctx.translate(20, 52); ctx.rotate(-0.115);
+            lpBar(ctx, 0, 0, 186, 14, '#efeae1', 0);
+            lpBar(ctx, 0, 19, 132, 14, '#d4232a', 0);
+            ctx.restore();
+        }
+    },
+
+    /* 39 — De Stijl: rules as ground, primaries as fill */
+    canvasST: {
+        bg: '#ffffff', surface: '#ffffff', navBg: '#ffffff', cardBg: '#ffffff',
+        ink: '#111111', inkSoft: '#8b8b8b', accent: '#c8102e', accent2: '#0b4ea2',
+        radius: 0, btnRadius: 0, border: 4, borderColor: '#111', headRadius: 0,
+        over: (ctx, W, H) => {
+            // primaries snapped onto the card grid, never overlapping a rule
+            ctx.fillStyle = '#f2c200'; ctx.fillRect(212, 160, 88, 52);
+            ctx.fillStyle = '#0b4ea2'; ctx.fillRect(116, 186, 88, 26);
+            ctx.fillStyle = '#c8102e'; ctx.fillRect(232, 50, 68, 48);
+            // the black rules: full-bleed, never stopping short
+            ctx.fillStyle = '#111';
+            [[0, 44, W, 5], [0, 152, W, 5], [206, 0, 5, H], [110, 152, 5, 88]]
+                .forEach(([x, y, w, h]) => ctx.fillRect(x, y, w, h));
+        }
+    },
+
+    /* 40 — Psychedelic: equal-value complementaries, drawn not animated */
+    canvasPS: {
+        surface: '#2a0140', surface2: '#6c00a8', navBg: '#2a0140', cardBg: '#2a0140',
+        ink: '#9dff2e', inkSoft: '#ffe94a', accent: '#ff6a00', accent2: '#d0009b',
+        radius: 14, btnRadius: 999, border: 2, borderColor: '#9dff2e',
+        bgFn: (ctx, W, H) => {
+            ctx.fillStyle = '#6c00a8'; ctx.fillRect(0, 0, W, H);
+            // sunburst from a rotate loop, same technique as canvasDC
+            ctx.save(); ctx.translate(W / 2, H / 2);
+            for (let i = 0; i < 36; i++) {
+                ctx.rotate(Math.PI / 18);
+                ctx.fillStyle = i % 2 ? '#d0009b' : '#9dff2e';
+                ctx.fillRect(0, 0, 260, 26);
+            }
+            ctx.restore();
+        },
+        over: (ctx, W, H) => {
+            // concentric rings behind the hero — the poster's optical centre
+            ctx.save();
+            ctx.globalAlpha = .9;
+            [[46, '#ff6a00'], [34, '#d0009b'], [22, '#9dff2e'], [11, '#2a0140']]
+                .forEach(([r, c]) => {
+                    ctx.fillStyle = c;
+                    ctx.beginPath(); ctx.arc(264, 62, r, 0, 6.284); ctx.fill();
+                });
+            ctx.restore();
+        }
+    },
+
+    /* 41 — Swiss Punk: the grid is visible, then violated by whole units */
+    canvasWG: {
+        bg: '#e8e4dc', surface: '#fdfcf8', navBg: '#e8e4dc', cardBg: '#fdfcf8',
+        ink: '#14213d', inkSoft: '#7c8296', accent: '#1b4dd8', accent2: '#ff6a13',
+        radius: 0, btnRadius: 0, border: 1, borderColor: '#14213d', headRadius: 0,
+        under: (ctx, W, H) => {
+            // the grid it is arguing with, left visible on purpose
+            ctx.strokeStyle = 'rgba(20,33,61,.13)'; ctx.lineWidth = 1;
+            for (let x = 20; x < W; x += 34) {
+                ctx.beginPath(); ctx.moveTo(x + .5, 0); ctx.lineTo(x + .5, H); ctx.stroke();
+            }
+        },
+        over: (ctx, W, H) => {
+            // enlarged halftone: the dots stop being tone and become the image
+            ctx.save();
+            ctx.beginPath(); ctx.arc(258, 74, 44, 0, 6.284); ctx.clip();
+            ctx.fillStyle = '#1b4dd8';
+            for (let y = 30; y < 120; y += 7)
+                for (let x = 210; x < 306; x += 7) {
+                    ctx.beginPath(); ctx.arc(x, y, 2.2, 0, 6.284); ctx.fill();
+                }
+            ctx.restore();
+            // second hero line stepped one whole grid unit right, in the second accent
+            ctx.fillStyle = '#e8e4dc'; ctx.fillRect(18, 67, 140, 18);
+            lpBar(ctx, 54, 69, 132, 14, '#ff6a13', 0);
+        }
+    },
+
+    /* 42 — Teletext: eight colours, everything on the character cell */
+    canvasTX: {
+        bg: '#000000', surface: '#0000ff', surface2: '#000000', navBg: '#0000ff',
+        cardBg: '#000000', ink: '#ffff00', inkSoft: '#00ffff', accent: '#ff0000',
+        accent2: '#00ff00',
+        radius: 0, btnRadius: 0, headRadius: 0, border: 0,
+        over: (ctx, W, H) => {
+            // full-width colour rows — the only kind of block the format had
+            ctx.fillStyle = '#ff0000'; ctx.fillRect(0, 44, W, 22);
+            ctx.fillStyle = '#00ff00'; ctx.fillRect(0, 68, W, 22);
+            ctx.fillStyle = '#000';
+            ctx.font = '600 13px "IBM Plex Mono", monospace';
+            ctx.fillText('SPECTRUM TIMES', 8, 60);
+            ctx.fillText('P100  40x25  8 COLOURS', 8, 84);
+            // block mosaics snapped to the cell, no partial cells anywhere
+            const cw = 16, ch = 11;
+            [['#ff00ff', 0], ['#00ffff', 1], ['#ffff00', 2], ['#00ff00', 3]]
+                .forEach(([c, i]) => {
+                    ctx.fillStyle = c;
+                    for (let k = 0; k < 4; k++) ctx.fillRect(8 + (i * 5 + k) * cw, 160 + (k % 2) * ch, cw, ch);
+                });
+        }
+    },
+
+    /* 43 — ANSI/BBS: EGA sixteen on blue, gradients made of glyphs */
+    canvasBB: {
+        bg: '#0000aa', surface: '#0000aa', surface2: '#000080', navBg: '#000080',
+        cardBg: '#0000aa', ink: '#ffffff', inkSoft: '#aaaaaa', accent: '#55ffff',
+        accent2: '#ffff55',
+        radius: 0, btnRadius: 0, headRadius: 0, border: 1, borderColor: '#00aaaa',
+        over: (ctx, W, H) => {
+            // a double-line box-drawing frame, the CP437 signature
+            ctx.strokeStyle = '#55ffff'; ctx.lineWidth = 1;
+            ctx.strokeRect(5.5, 33.5, W - 11, H - 40);
+            ctx.strokeRect(8.5, 36.5, W - 17, H - 46);
+            // the shade ramp: three discrete steps, because there was no alpha
+            ['#003c8f', '#0064c8', '#55ffff'].forEach((c, i) => {
+                ctx.fillStyle = c;
+                for (let k = 0; k < 6; k++) ctx.fillRect(232 + i * 24 + k * 4, 50, 3, 40);
+            });
+            ctx.fillStyle = '#ffff55';
+            ctx.font = '600 9px "IBM Plex Mono", monospace';
+            ctx.fillText('SPECTRUM BBS  2400 BAUD', 16, 228);
+        }
+    }
+};
+
+function drawAllLandings() {
+    Object.keys(LP_STYLES).forEach(id => {
+        try { drawLanding(id, LP_STYLES[id]); }
+        catch (err) { console.warn('landing', id, err); }
+    });
+}
+
+/* --- Section behaviours ---------------------------------------- */
+
+// 27: specular highlight tracks the pointer
+function bindSpecular() {
+    document.querySelectorAll('[data-specular]').forEach(el => {
+        el.addEventListener('pointermove', e => {
+            const r = el.getBoundingClientRect();
+            el.style.setProperty('--mx', ((e.clientX - r.left) / r.width * 100) + '%');
+            el.style.setProperty('--my', ((e.clientY - r.top) / r.height * 100) + '%');
+        });
+    });
+}
+
+// 28: parallax rotation — depth only reads if it responds to viewpoint
+function bindParallax() {
+    if (REDUCED) return;
+    document.querySelectorAll('[data-parallax]').forEach(stage => {
+        const host = stage.closest('section') || stage;
+        host.addEventListener('pointermove', e => {
+            const r = host.getBoundingClientRect();
+            const rx = ((e.clientY - r.top) / r.height - .5) * -9;
+            const ry = ((e.clientX - r.left) / r.width - .5) * 12;
+            stage.style.transform = `rotateX(${rx}deg) rotateY(${ry}deg)`;
+        });
+        host.addEventListener('pointerleave', () => { stage.style.transform = ''; });
+    });
+}
+
+// 29: token-by-token streaming, preceded by a skeleton
+function bindAIStream() {
+    const out = document.getElementById('aiStream');
+    const skel = document.getElementById('aiSkeleton');
+    const caret = document.getElementById('aiCaret');
+    if (!out) return;
+    const tokens = ('Three do. Glassmorphism (B) and Neumorphism (D) both push contrast into ' +
+        'translucency and shadow, and Quiet Technology (Q) lowers it deliberately. ' +
+        'Concept 34 documents the measured ratios.').split(/(\s+)/);
+    const finish = () => { out.textContent = tokens.join(''); if (skel) skel.remove(); };
+    if (REDUCED) { finish(); return; }
+    let i = 0, started = false;
+    // observe the thread, not the output span: an empty inline element
+    // has a zero-area box and never reaches a non-zero threshold
+    const target = out.closest('.ai-thread') || out;
+    const io = new IntersectionObserver(entries => {
+        entries.forEach(en => {
+            if (!en.isIntersecting || started) return;
+            started = true;
+            setTimeout(() => {
+                if (skel) skel.remove();
+                const t = setInterval(() => {
+                    if (i >= tokens.length) {
+                        clearInterval(t);
+                        if (caret) caret.classList.remove('ai-caret');
+                        const c = document.createElement('sup');
+                        c.className = 'ai-cite'; c.textContent = 'B, D, Q';
+                        out.appendChild(c);
+                        return;
+                    }
+                    out.textContent += tokens[i++];
+                }, 42);
+            }, 1100);
+        });
+    }, { threshold: .25 });
+    io.observe(target);
+}
+
+// 30: split the heading so each glyph can carry its own delay
+function bindKinetic() {
+    document.querySelectorAll('[data-kinetic-split]').forEach(el => {
+        const text = el.textContent.trim();
+        el.textContent = '';
+        el.setAttribute('aria-label', text);
+        [...text].forEach((ch, i) => {
+            const s = document.createElement('span');
+            s.textContent = ch === ' ' ? ' ' : ch;
+            s.style.animationDelay = (i * 0.045) + 's';
+            s.setAttribute('aria-hidden', 'true');
+            el.appendChild(s);
+        });
+    });
+}
+
+// S: starfield particles (the copy promised them; CSS now provides them)
+function buildStarfield() {
+    const host = document.getElementById('starfield');
+    if (!host) return;
+    const frag = document.createDocumentFragment();
+    for (let i = 0; i < 140; i++) {
+        const s = document.createElement('span');
+        const size = Math.random() * 2.2 + 0.4;
+        s.style.cssText =
+            `width:${size}px;height:${size}px;left:${Math.random() * 100}%;top:${Math.random() * 100}%;` +
+            `animation-delay:${(Math.random() * 4).toFixed(2)}s`;
+        frag.appendChild(s);
+    }
+    host.appendChild(frag);
+}
+
+// F: Material 3 ripple, originating at the pointer
+function bindRipples() {
+    document.querySelectorAll('[data-ripple]').forEach(btn => {
+        btn.addEventListener('pointerdown', e => {
+            const r = btn.getBoundingClientRect();
+            const d = Math.max(r.width, r.height);
+            const ink = document.createElement('span');
+            ink.className = 'ripple';
+            ink.style.width = ink.style.height = d + 'px';
+            ink.style.left = (e.clientX - r.left - d / 2) + 'px';
+            ink.style.top = (e.clientY - r.top - d / 2) + 'px';
+            btn.appendChild(ink);
+            ink.addEventListener('animationend', () => ink.remove());
+        });
+    });
+}
+
+// T: a terminal that actually types
+function bindTerminal() {
+    const el = document.getElementById('termType');
+    if (!el) return;
+    const script = [
+        'render --theme=terminal --glow',
+        'grep -c "concept" ./spectrum.html   # 26',
+        'exit 0'
+    ];
+    if (REDUCED) { el.textContent = script[script.length - 1]; return; }
+    let line = 0, ch = 0, holding = 0;
+    setInterval(() => {
+        if (holding > 0) { holding--; return; }
+        const text = script[line];
+        if (ch <= text.length) {
+            el.textContent = text.slice(0, ch++);
+        } else {
+            holding = 24;
+            line = (line + 1) % script.length;
+            ch = 0;
+        }
+    }, 55);
+}
+
+// Nav scrollspy — the nav had no indication of position
+function bindScrollSpy() {
+    const links = [...document.querySelectorAll('.nav-scroller a')];
+    const map = new Map();
+    links.forEach(a => {
+        const el = document.querySelector(a.getAttribute('href'));
+        if (el) map.set(el, a);
+    });
+    if (!map.size) return;
+    const io = new IntersectionObserver(entries => {
+        entries.forEach(en => {
+            if (!en.isIntersecting) return;
+            links.forEach(l => l.classList.remove('active'));
+            const a = map.get(en.target);
+            if (a) {
+                a.classList.add('active');
+                a.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+            }
+        });
+    }, { rootMargin: '-45% 0px -50% 0px', threshold: 0 });
+    map.forEach((_, el) => io.observe(el));
+}
+
+function bindReveal() {
+    const items = document.querySelectorAll('.reveal');
+    if (!('IntersectionObserver' in window) || REDUCED) {
+        items.forEach(i => i.classList.add('is-visible'));
+        return;
+    }
+    const io = new IntersectionObserver((entries, obs) => {
+        entries.forEach(en => {
+            if (en.isIntersecting) { en.target.classList.add('is-visible'); obs.unobserve(en.target); }
+        });
+    }, { rootMargin: '0px 0px -12% 0px', threshold: 0.08 });
+    items.forEach(i => io.observe(i));
+}
+
+/* --- EXPERIMENTAL chapter --------------------------------------- */
+
+// EXP-06: bind the mesh gradient to a value instead of a timer
+function bindAmbient() {
+    const field = document.getElementById('xAmbient');
+    const input = document.getElementById('xLoad');
+    const out = document.getElementById('xLoadOut');
+    if (!field || !input) return;
+    const apply = () => {
+        const v = +input.value;
+        // 140deg (green) -> 0deg (red); spread widens as load climbs
+        field.style.setProperty('--hue', Math.round(140 - v * 1.4));
+        field.style.setProperty('--spread', Math.round(38 + v * 0.35));
+        if (out) out.textContent = v + '%';
+    };
+    input.addEventListener('input', apply);
+    apply();
+}
+
+// EXP-07 / EXP-10: one seeded generator feeds both fields, so the
+// only difference between the two specimens is tone. Without the
+// seed the comparison would prove nothing.
+function buildChaos() {
+    const mono = document.getElementById('xMonoMax');
+    const calm = document.getElementById('xLoudCalm');
+    if (!mono && !calm) return;
+
+    let seed = 20260729;
+    const rnd = () => (seed = (seed * 1664525 + 1013904223) % 4294967296) / 4294967296;
+
+    const words = ['MORE', 'LOUD', 'NOW', 'YES', 'BIG', 'RAW', 'GO', 'MAX', 'HYPE', 'ALL',
+        'EXTRA', 'PEAK', 'OVER', 'STACK', 'PILE', 'DENSE', 'HEAP', 'RIOT'];
+    const layers = [];
+    for (let i = 0; i < 26; i++) {
+        layers.push({
+            x: rnd() * 88, y: rnd() * 78,
+            rot: (rnd() * 44 - 22),
+            w: 58 + rnd() * 74,
+            word: words[Math.floor(rnd() * words.length)],
+            tone: rnd()
+        });
+    }
+
+    const paint = (host, toneFn) => {
+        if (!host) return;
+        const frag = document.createDocumentFragment();
+        layers.forEach(l => {
+            const s = document.createElement('span');
+            s.textContent = l.word;
+            s.style.cssText =
+                `left:${l.x}%;top:${l.y}%;width:${l.w}px;` +
+                `transform:rotate(${l.rot}deg);background:${toneFn(l.tone)}`;
+            frag.appendChild(s);
+        });
+        host.appendChild(frag);
+    };
+
+    // EXP-07: full tonal range, single hue
+    paint(mono, t => `hsl(348 ${55 + t * 30}% ${26 + t * 62}%)`);
+    // EXP-10: same geometry, tonal range compressed to ~8%
+    paint(calm, t => `hsl(38 ${10 + t * 6}% ${85 + t * 8}%)`);
+}
+
+// EXP-09: a smooth ramp rendered in exactly two colours,
+// 4x4 Bayer ordered dither — tone with no grey anywhere.
+function drawDither() {
+    const ctx = getCtx('canvasDither'); if (!ctx) return;
+    const W = 300, H = 90;
+    const bayer = [
+        [0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]
+    ];
+    const img = ctx.createImageData(W, H);
+    for (let y = 0; y < H; y++) {
+        for (let x = 0; x < W; x++) {
+            const ramp = x / (W - 1);
+            const threshold = (bayer[y & 3][x & 3] + 0.5) / 16;
+            const on = ramp > threshold ? 0 : 255;   // 0 = black, 255 = white
+            const i = (y * W + x) * 4;
+            img.data[i] = img.data[i + 1] = img.data[i + 2] = on;
+            img.data[i + 3] = 255;
+        }
+    }
+    // putImageData ignores the DPR transform, so draw through a buffer
+    const buf = document.createElement('canvas');
+    buf.width = W; buf.height = H;
+    buf.getContext('2d').putImageData(img, 0, 0);
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(buf, 0, 0, W, H);
+}
+
+/* --- Charts ----------------------------------------------------- */
+function initCharts() {
+    if (typeof Chart === 'undefined') return;
+
+    const radarCtx = document.getElementById('radarChart');
+    if (radarCtx) {
+        new Chart(radarCtx, {
+            type: 'radar',
+            data: {
+                labels: ['Clarity', 'Energy', 'Brand Identity', 'Accessibility', 'Visual Depth'],
+                datasets: [
+                    {
+                        label: 'Baseline X (AI Default)',
+                        data: [95, 20, 10, 90, 10],
+                        backgroundColor: 'rgba(99, 102, 241, 0.2)',
+                        borderColor: '#6366f1', pointBackgroundColor: '#6366f1'
+                    },
+                    {
+                        label: 'Concept A (Neobrutalism)',
+                        data: [70, 90, 95, 60, 25],
+                        backgroundColor: 'rgba(255, 209, 0, 0.25)',
+                        borderColor: '#000000', pointBackgroundColor: '#000000'
+                    },
+                    {
+                        label: 'Concept B (Glassmorphism)',
+                        data: [60, 60, 70, 40, 95],
+                        backgroundColor: 'rgba(161, 140, 209, 0.2)',
+                        borderColor: '#a18cd1', pointBackgroundColor: '#a18cd1'
+                    },
+                    {
+                        label: 'Concept 27 (Liquid Glass)',
+                        data: [70, 62, 88, 52, 100],
+                        backgroundColor: 'rgba(56, 189, 248, 0.18)',
+                        borderColor: '#38bdf8', pointBackgroundColor: '#38bdf8'
+                    },
+                    {
+                        label: 'Concept 34 (Accessibility-First)',
+                        data: [100, 22, 28, 100, 5],
+                        backgroundColor: 'rgba(30, 64, 175, 0.15)',
+                        borderColor: '#1e40af', pointBackgroundColor: '#1e40af'
+                    }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        angleLines: { color: 'rgba(0,0,0,.1)' },
+                        grid: { color: 'rgba(0,0,0,.1)' },
+                        pointLabels: { font: { family: 'Inter', size: 12 } },
+                        ticks: { display: false },
+                        suggestedMin: 0, suggestedMax: 100
+                    }
+                },
+                plugins: { legend: { position: 'bottom' } }
+            }
+        });
+    }
+
+    const barCtx = document.getElementById('barChart');
+    if (barCtx) {
+        new Chart(barCtx, {
+            type: 'bar',
+            data: {
+                labels: ['SaaS', 'Web3 / Crypto', 'E-commerce', 'Creative Agency', 'Dev Tools'],
+                datasets: [
+                    { label: 'Baseline X', data: [80, 20, 50, 5, 90], backgroundColor: '#1e293b' },
+                    { label: 'Hybrid Styles (F, C, M)', data: [60, 60, 80, 40, 50], backgroundColor: '#8b5cf6' },
+                    { label: 'Avant-Garde (A, G, Z)', data: [10, 80, 30, 95, 10], backgroundColor: '#f59e0b' }
+                ]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                scales: { y: { beginAtZero: true, max: 100 } },
+                plugins: { legend: { position: 'bottom' } }
+            }
+        });
+    }
+}
+
+/* =================================================================
+   SEGMENT → DESIGN.md
+   Clicking a concept copies a complete design brief for it. The
+   brief has to survive leaving this page: an agent that reads it
+   without ever seeing the specimen must be able to rebuild the
+   style. So each entry carries intent, the load-bearing rules,
+   measured tokens, component recipes and an acceptance check —
+   and the palette and reference CSS are pulled from the live
+   document rather than retyped, so the brief cannot drift from
+   the thing it describes.
+   ================================================================= */
+
+const SEG_INTRO =
+    'You are applying a specific visual language to whatever the user is building.\n' +
+    'Read this file completely before writing any markup or styles.\n\n' +
+    'Rules of engagement:\n' +
+    '- Where this brief and your defaults disagree, this brief wins.\n' +
+    '- Where it is silent, pick the option most consistent with section 2.\n' +
+    '- Adapt the tokens to the user’s content and framework; do not adapt them\n' +
+    '  toward the generic. A half-applied style reads as a mistake, not as restraint.\n' +
+    '- The numbers here were measured off a working specimen. Keep them.';
+
+const SEG_SPECIMEN =
+    'If the user has not specified a layout, build the canonical specimen: a nav bar\n' +
+    '(wordmark plus three or four links and one action), a hero (eyebrow, headline,\n' +
+    'subhead, primary and secondary CTA), a three-card feature row, and a footer.\n' +
+    'Holding that structure constant is what makes a style legible — every decision\n' +
+    'below is about treatment, not about rearranging the page.';
+
+/* Roles in the order they should be read, mapped onto the keys the
+   specimen table already uses. */
+const SEG_ROLES = [
+    ['bg', 'Page background'],
+    ['surface', 'Primary surface / card'],
+    ['surface2', 'Secondary surface'],
+    ['cardBg', 'Card fill'],
+    ['navBg', 'Nav bar'],
+    ['ink', 'Primary text'],
+    ['inkSoft', 'Muted / secondary text'],
+    ['accent', 'Accent — primary action'],
+    ['accent2', 'Secondary accent'],
+    ['borderColor', 'Border'],
+    ['shadowColor', 'Shadow colour']
+];
+
+const SEG_PROMPTS = {
+
+    baseline: {
+        canvas: 'canvasX', theme: null, label: 'Concept X', series: 'Baseline',
+        name: 'AI Default / Clean Functionalism',
+        tagline: 'The house style of AI-assisted development: safe, readable, voiceless.',
+        bg: 'Flat #0B0E14 deep slate. No gradient, no texture, no imagery.',
+        intent: 'This is the modern starting point — what an assistant produces when nobody asked for a look. Dark slate ground, generously rounded cards, one saturated indigo reserved for anything actionable, a system sans throughout. It is genuinely good at what it does: fast to build, easy to read, accessible by default. What it lacks is a narrative voice. Choose it when the content is the product and the interface should make no argument of its own. Reject it the moment the work needs to be recognisable.',
+        rules: [
+            'One accent hue. It appears on primary actions, active nav state and focus rings — nowhere decorative.',
+            'Elevation is carried by surface lightness (#0B0E14 ground, #141922 card), never by shadow. There are no shadows in this style.',
+            'Every corner is rounded 8–16px. No sharp corners, no full pills except on tags.',
+            'Hierarchy comes from size and weight only. Borders are hairlines that separate, never decorate.'
+        ],
+        type: [
+            'One family: Inter, or the system UI stack. No display face, no serif, no mono outside code.',
+            'Three weights only — 400 body, 600 subheads and UI, 800 page headline.',
+            'Headings track tight (-0.02em) and sit at 1.1 leading; body is 16px at 1.6.',
+            'Eyebrows are 12px, uppercase, 0.2em tracking, muted slate.'
+        ],
+        form: [
+            'Card radius 8px, button radius 6px, tag radius 999px.',
+            '1px borders in a slate one step lighter than the surface they sit on.',
+            'No shadow, no gradient, no noise, no blur. Flatness is the point.',
+            'Icon strokes 1.5px, 20px box, same colour as the text they label.'
+        ],
+        motion: [
+            'Transitions are 150ms ease and touch colour only — nothing moves position on hover.',
+            'Hover raises a surface by one slate step rather than lifting it.',
+            'Focus is a 2px accent ring at 2px offset, always visible, never removed.'
+        ],
+        layout: 'A single centred column, max-width 72rem, 24px gutters, 80–96px of vertical padding between major blocks. Two- and three-column grids collapse to a stack under 768px.',
+        comp: [
+            'Button, primary — solid #6366f1, white label, 6px radius, 10px/20px padding, no shadow.',
+            'Button, secondary — transparent fill, 1px #334155 border, slate-200 label.',
+            'Card — #141922 on #0B0E14, 1px #1f2937 border, 24px padding, 8px radius.',
+            'Input — card surface, 1px border that brightens to the accent on focus, 6px radius.',
+            'Nav — #10151d bar, 64px tall, wordmark left, links right at 14px/500.'
+        ],
+        dos: [
+            'Ship this when velocity matters more than distinctiveness.',
+            'Keep the accent scarce enough that it always means “you can act here”.',
+            'Layer with real slate steps rather than white-at-low-opacity.'
+        ],
+        donts: [
+            'Do not add a second accent hue — it immediately reads as a different, worse style.',
+            'Do not add glow, gradient or glass. Those are Concepts S, J and B, and mixing them in produces mush.',
+            'Do not push radius past 16px; the style tips into Claymorphism.'
+        ],
+        a11y: 'Body text must be #e2e8f0 or #94a3b8 on the slate grounds; #5b6b85 is decorative only and fails contrast at body size. Because hover is a colour change alone, keep the change large enough to notice without motion.',
+        check: [
+            'Every surface in the build is one of exactly two greys.',
+            'A search for box-shadow returns nothing.',
+            'The accent appears only on interactive elements.',
+            'Strip all colour and the hierarchy still reads.'
+        ]
+    },
+
+    neobrutalist: {
+        canvas: 'canvasA', theme: 'theme-neobrutalist', label: 'Concept A', series: 'Series I (A–Z)',
+        name: 'Neobrutalism',
+        tagline: 'Raw honesty: hard black outlines, offset shadows, no apology.',
+        bg: 'Saturated flat #FFD100 yellow. The ground is never white — it is a colour loud enough to be a decision.',
+        intent: 'A rejection of the soft, blurred, safe web. Every element is outlined in heavy black, sits on a hard offset shadow with zero blur, and refuses to blend into anything. Nothing is subtle and nothing pretends to be a physical object either — the shadow is a graphic device, not a light simulation. It reads as confident and slightly amateur on purpose. Widely used by cutting-edge SaaS landing pages and creative studios that want to look like they have opinions.',
+        rules: [
+            'The drop shadow is load-bearing: 4–6px offset, zero blur, pure black, no opacity. If you blur it, the style dies.',
+            'Every surface has a 2–3px solid black border. Every one, including inputs and images.',
+            'Zero border-radius, everywhere.',
+            'The shadow collapses on press — translate the element by the shadow offset and drop the shadow to 0. That interaction is the whole personality.'
+        ],
+        type: [
+            'A heavy geometric display face (Unbounded, or any 900-weight grotesque) for everything structural.',
+            'Headings are black weight, uppercase, tracking-tight, leading-none. They should feel too big.',
+            'Body copy stays the same family at 400–500; do not soften it with a second, gentler font.',
+            'Labels and metadata are uppercase, 0.15em tracking, 11–12px.'
+        ],
+        form: [
+            'Borders 2.5px #000. Shadows 4px 4px 0 #000.',
+            'Radius 0 on every element without exception.',
+            'Accents are unmixed and high-chroma — cyan #22d3ee, pink #ff90e8 — used as flat fills, never gradients.',
+            'Surfaces are pure white or a single flat accent. No tints, no shading.'
+        ],
+        motion: [
+            'Press: translate(4px, 4px) and box-shadow to none, in 60ms. Instant, mechanical, no easing curve worth naming.',
+            'Hover: invert the fill and label to black-on-white or white-on-black.',
+            'Nothing fades. Nothing eases in. State changes are cuts.'
+        ],
+        layout: 'Asymmetric grids with deliberately unequal column spans. Elements may overlap and rotate a degree or two. Alignment is loose but never accidental — the misalignment should look chosen.',
+        comp: [
+            'Button — white or accent fill, 2.5px black border, 4px offset shadow, uppercase bold label, collapses on active.',
+            'Card — same construction at a larger scale; 32px padding; may span two grid columns.',
+            'Tape / tag — a rotated accent rectangle with a black border, sitting slightly over the element it labels.',
+            'Input — white fill, 2.5px border, inset shadow on focus instead of a ring.'
+        ],
+        dos: [
+            'Let one element be conspicuously larger than the grid wants.',
+            'Use the accent colours at full saturation; muted neobrutalism is nothing.',
+            'Keep the light source consistent — all shadows offset the same direction.'
+        ],
+        donts: [
+            'Do not blur, soften or tint the shadow.',
+            'Do not round a single corner.',
+            'Do not add a gradient anywhere; flatness is what makes the outline read.'
+        ],
+        a11y: 'Contrast is rarely the problem here — target size and motion are. Keep the press translate under 6px so it does not look like a mis-click, and make sure the yellow ground never carries body text below #000.',
+        check: [
+            'Every box has a visible black border and a hard shadow.',
+            'Pressing any control visibly collapses its shadow.',
+            'border-radius is 0 across the whole build.',
+            'No colour in the palette is desaturated.'
+        ]
+    },
+
+    glass: {
+        canvas: 'canvasB', theme: 'theme-glassmorphism', label: 'Concept B', series: 'Series I (A–Z)',
+        name: 'Glassmorphism',
+        tagline: 'Frosted panes over a vivid, moving backdrop.',
+        bg: 'A saturated multi-stop gradient (#7b4bc4 → #b74cae → #e0629a) with large blurred colour orbs drifting behind it. The backdrop must be vivid and in motion.',
+        intent: 'Transparency and background blur used to build depth, as in macOS Big Sur and Windows 11. The critical, most-missed point: glass only reads as glass when there is something worth blurring behind it. Blur over a flat fill is invisible — you have just made a slightly grey box. Build the backdrop first, then float panels on it.',
+        rules: [
+            'The backdrop is not decoration, it is the mechanism. Vivid gradient plus at least three large blurred orbs, slowly drifting.',
+            'Panels are white at 12–22% opacity with backdrop-filter: blur(14–20px). Always pair with a 1px white-at-50% border — the rim is what defines the edge.',
+            'Text on glass is fully opaque white. Never translucent, never grey.',
+            'Stack at most two glass layers. A third stops reading as depth and starts reading as fog.'
+        ],
+        type: [
+            'A soft geometric sans — Outfit, or similar — at light-to-regular weight.',
+            'Headings 600 max; the style has no room for heavy type, which fights the material.',
+            'Generous leading (1.6+) so the blurred backdrop shows between lines.',
+            'No mono, no serif, no uppercase blocks.'
+        ],
+        form: [
+            'Radius 10–16px, consistent across panels and buttons.',
+            'Border 1px rgba(255,255,255,.5) on every glass surface; a slightly brighter top edge sells the thickness.',
+            'Shadows are wide and soft (0 8px 32px rgba(0,0,0,.2)), used to separate panes from backdrop, not to imply weight.',
+            'Secondary panels drop to 12% white so the hierarchy is legible through opacity alone.'
+        ],
+        motion: [
+            'The backdrop orbs drift continuously on 20–30s loops — slow enough to never draw the eye.',
+            'Panels lift 2px and gain 4% opacity on hover.',
+            'Nothing about the glass itself animates; the movement lives behind it.'
+        ],
+        layout: 'Centred, floating compositions with real air around each panel. Never edge-to-edge — glass needs margin so the backdrop is visible around it.',
+        comp: [
+            'Panel — rgba(255,255,255,.22), blur(18px), 1px white/50 border, 12px radius, 32px padding.',
+            'Button — rgba(255,255,255,.55) fill for primary, .16 for secondary, same border treatment.',
+            'Nav — a full-width glass bar at .16 opacity with a bottom hairline only.',
+            'Nested panel — .12 opacity on top of a .22 parent, to show the layering explicitly.'
+        ],
+        dos: [
+            'Animate the backdrop, not the glass.',
+            'Let the orbs bleed off the edges of the viewport.',
+            'Test on both the lightest and darkest region of your backdrop.'
+        ],
+        donts: [
+            'Do not use glass over a flat or near-flat background — there is nothing to refract and the effect is wasted.',
+            'Do not make body text translucent to “match” the panel.',
+            'Do not add magnification or edge distortion. That is Concept 27, Liquid Glass, and it is a different material.'
+        ],
+        a11y: 'This is the style’s weak point and it must be handled explicitly. Contrast changes as the backdrop moves, so guarantee the floor: either keep the panel opacity high enough that white text clears 4.5:1 over the lightest possible backdrop region, or put a subtle dark scrim inside the panel behind the text.',
+        check: [
+            'Removing the backdrop makes the design obviously broken — if it still looks fine, you have not built glass.',
+            'Every glass surface has a visible 1px light rim.',
+            'No text below 100% opacity.',
+            'At most two glass layers deep.'
+        ]
+    },
+
+    bento: {
+        canvas: 'canvasC', theme: 'theme-bento', label: 'Concept C', series: 'Series I (A–Z)',
+        name: 'The Bento Layout',
+        tagline: 'Information segmented into rounded tiles of deliberately unequal weight.',
+        bg: 'Flat #f3f4f6 cool grey — slightly darker than the tiles so the grid reads as separated boxes rather than a page.',
+        intent: 'Popularised by Apple product pages: a page of discrete rounded containers, each holding exactly one idea, sized by importance rather than by content length. The unequal sizing is the design. A bento grid of equal tiles is just a card list. It is the right choice for dashboards, feature summaries and anywhere the reader will scan rather than read.',
+        rules: [
+            'Tile sizes must be visibly unequal — a 2×2 hero tile next to 1×1 tiles. Equal tiles are a failure of the form.',
+            'One idea per tile. If a tile needs a subheading, it should have been two tiles.',
+            'The ground is darker than the tiles; the tiles are the figure.',
+            'Every tile is individually addressable — it lifts on hover to say so.'
+        ],
+        type: [
+            'Inter or an equivalent neutral UI sans; no display face.',
+            'Tile headline 18–20px/600, tile body 14px/400 muted, metrics in 32–48px/800.',
+            'Labels are 11px uppercase at 0.12em tracking in #94a3b8.',
+            'Never more than three type sizes inside one tile.'
+        ],
+        form: [
+            'Tile radius 11–16px, 1px #e5e7eb border, soft shadow 0 1px 3px rgba(15,23,42,.10).',
+            'Grid gap 24px, equal to or slightly less than tile padding (24–32px).',
+            'Accent #4f46e5 for actions, #10b981 for positive metrics. Two accents maximum.',
+            'No texture, no gradient except optionally inside a single hero tile.'
+        ],
+        motion: [
+            'Hover: translateY(-4px) and shadow deepens, 200ms ease-out.',
+            'Tiles animate in on scroll with a short stagger, 40ms apart.',
+            'Nothing inside a tile animates independently of the tile.'
+        ],
+        layout: 'A 3- or 4-column grid where tiles span 1–2 columns and 1–2 rows. On mobile everything collapses to a single-column stack in reading order — do not try to preserve the mosaic below 768px.',
+        comp: [
+            'Hero tile — spans 2×2, holds the primary claim and one large number or visual.',
+            'Metric tile — 1×1, a label, a large figure, and an optional delta in the positive accent.',
+            'Action tile — 1×1 with a single button filling its lower edge.',
+            'Media tile — image bleeds to the tile edge inside the radius; no inner padding.'
+        ],
+        dos: [
+            'Vary tile size by importance and let the grid look composed rather than filled.',
+            'Keep the gap consistent — an irregular gap destroys the mosaic.',
+            'Let one tile be visually louder than the rest.'
+        ],
+        donts: [
+            'Do not fill every tile with the same density of content.',
+            'Do not nest bento inside bento.',
+            'Do not use shadow strong enough to make tiles float; they should sit.'
+        ],
+        a11y: 'Tiles that are entirely clickable need a real link or button inside them rather than a click handler on the div, and the hover lift must be paired with a focus style that is visible without hovering.',
+        check: [
+            'At least one tile is twice the size of another.',
+            'Every tile could be described in one sentence.',
+            'The grid gap is identical everywhere.',
+            'The mobile stack reads in a sensible order.'
+        ]
+    },
+
+    skeuo: {
+        canvas: 'canvasD', theme: 'theme-skeuomorphic', label: 'Concept D', series: 'Series I (A–Z)',
+        name: 'Soft UI / Neumorphism',
+        tagline: 'One flat colour, extruded and inset by paired shadows.',
+        bg: 'A single mid-tone — #e0e0e0 — used for the page, the cards and the buttons alike. Everything is the same colour; only the light differs.',
+        intent: 'Elements appear pushed out of, or pressed into, a continuous surface. The entire effect comes from one trick: a dark shadow bottom-right and a light shadow top-left, both blurred, from a fixed diffuse light. It only works when both states exist — raised to afford, inset to confirm. Build only the raised state and you have made buttons nobody can tell are buttons.',
+        rules: [
+            'Background, surface and control all share one hex value. Introducing a second surface colour breaks the illusion instantly.',
+            'Raised: box-shadow 6px 6px 12px #bebebe, -6px -6px 12px #ffffff. Inset is the same values with the inset keyword.',
+            'The light direction never changes across the whole interface.',
+            'Every interactive element must have both a raised and an inset state, and pressing must move between them.'
+        ],
+        type: [
+            'A neutral sans at 500–600 weight; the type sits in the surface, so it needs a little more weight than usual.',
+            'Text colour is a mid grey (#8d8d8d) darkened to near-black only where it must be read.',
+            'No display face — heavy type looks pasted onto the surface rather than part of it.',
+            'Uppercase, wide-tracked micro-labels suit the style well.'
+        ],
+        form: [
+            'Radius 10–20px. Softer corners hold the gradient better than sharp ones.',
+            'No borders anywhere — the shadow is the edge.',
+            'Accents are barely-there tints of the base (#cfcfcf, #c2c2c2), not colours.',
+            'Icons should be simple filled shapes; thin strokes disappear into the shadow.'
+        ],
+        motion: [
+            'Press: raised → inset in 120ms ease. This is the only motion the style needs.',
+            'Hover: soften the shadow blur slightly, as if the element rose a millimetre.',
+            'Never translate the element; it is part of the surface and cannot leave it.'
+        ],
+        layout: 'Roomy and centred, with 32–48px between elements — shadows need clearance or they overlap and muddy each other.',
+        comp: [
+            'Button — base colour, raised shadow pair, inset on :active, 12px radius.',
+            'Toggle — an inset track with a raised knob.',
+            'Card — raised, 24px radius, 32px padding; nothing inside it may also be raised at the same depth.',
+            'Input — always inset; that is what makes it read as a well rather than a button.'
+        ],
+        dos: [
+            'Use the inset state generously — inputs, wells, selected items.',
+            'Keep every shadow the same blur and offset so the light is consistent.',
+            'Reserve real colour for the single most important action, if at all.'
+        ],
+        donts: [
+            'Do not put a raised element on a raised element.',
+            'Do not use this for dense or text-heavy interfaces; the contrast ceiling is too low.',
+            'Do not confuse it with Claymorphism (Concept M) — that is saturated colour with inner shadows, this is monochrome with outer ones.'
+        ],
+        a11y: 'This is the style’s known failure and you must design around it. Contrast lives entirely in the shadow, and shadows do not survive high-contrast mode, forced colours, or a low-quality display. Give every control a text label, and provide a focus state that is a real outline, not a shadow change.',
+        check: [
+            'Exactly one surface colour appears in the whole build.',
+            'Every control has both a raised and an inset state.',
+            'All shadows share one light direction.',
+            'The interface is still operable with shadows disabled.'
+        ]
+    },
+
+    cyber: {
+        canvas: 'canvasE', theme: 'theme-cyberpunk', label: 'Concept E', series: 'Series I (A–Z)',
+        name: 'Cyberpunk',
+        tagline: 'Neon on industrial dark, with scan lines and glitch.',
+        bg: 'A near-black vertical gradient (#050508 → #0a0118 → #14001f) with magenta and cyan light pooling up from the bottom edge, and a persistent 3px scan-line overlay.',
+        intent: 'High-energy and immersive: neon glow against dark industrial tones, hard-edged panels, monospaced data, and interference artefacts treated as decoration. The style claims the interface is a screen you are looking at rather than a surface you are touching. Common in gaming hubs, crypto dashboards and anything that wants to feel unauthorised.',
+        rules: [
+            'Two neons and no more: hot magenta #ff2a6d and cyan #22d3ee. Everything else is near-black or a desaturated teal.',
+            'Glow is a real box-shadow / text-shadow in the accent colour, not a lighter fill.',
+            'Corners are cut or square — never rounded. Clip-path chamfers on panel corners sell it faster than anything else.',
+            'The scan-line overlay is always on, at very low opacity (6–8%). It is the texture the whole style rests on.'
+        ],
+        type: [
+            'Space Grotesk or a similar techno-grotesque for headings; a true mono for all data and labels.',
+            'Headings are black weight, uppercase, tracking-tight, and carry a two-colour glitch offset (magenta left, cyan right).',
+            'Body copy is small — 14px — and slightly wide-tracked; this style reads as terminal output.',
+            'Numbers, IDs and status strings should be everywhere, in mono.'
+        ],
+        form: [
+            'Panels: rgba(0,40,50,.55) fill, 1px #22d3ee border, radius 0, cyan glow at 0 0 12px.',
+            'Chamfer at least one corner of every major panel with clip-path.',
+            'Rules and dividers are 1px cyan at 30% — they read as HUD framing.',
+            'No soft shadows anywhere; depth is glow and overlap only.'
+        ],
+        motion: [
+            'Glitch on headline hover: two clipped copies offset ±2px in magenta and cyan for ~200ms, then snap back.',
+            'Scan lines drift downward on a slow linear loop.',
+            'Status indicators pulse on a 1–2s cycle. Everything else is instant.'
+        ],
+        layout: 'Dense, framed, HUD-like. Panels butt against each other with 1px seams rather than floating in whitespace. Corner brackets and edge labels around major regions.',
+        comp: [
+            'Button — transparent fill, 1px cyan border, cyan glow, uppercase mono label; hover fills with magenta and inverts.',
+            'Panel — translucent teal, chamfered corner, a mono ID string in the top-left.',
+            'Status chip — magenta text on near-black with a pulsing dot.',
+            'Data table — mono, 1px cyan hairlines, alternating rows at 3% cyan.'
+        ],
+        dos: [
+            'Label things with fake system metadata — rev numbers, statuses, coordinates.',
+            'Let glow bloom past the element edge.',
+            'Keep the dark ground genuinely dark; grey kills the neon.'
+        ],
+        donts: [
+            'Do not round corners.',
+            'Do not introduce a third neon.',
+            'Do not run the glitch continuously — it becomes noise and an accessibility problem.'
+        ],
+        a11y: 'Glow reduces effective contrast, so check the accent colours against the dark ground at their actual rendered opacity. Gate glitch and scan-line animation behind prefers-reduced-motion, and never encode status in neon colour alone — write the word too.',
+        check: [
+            'Only two accent hues appear.',
+            'Every panel has at least one cut corner.',
+            'The scan-line layer is present and under 10% opacity.',
+            'Glitch animation stops under prefers-reduced-motion.'
+        ]
+    },
+
+    material: {
+        canvas: 'canvasF', theme: 'theme-material', label: 'Concept F', series: 'Series I (A–Z)',
+        name: 'Expressive Flat (Material You)',
+        tagline: 'Tonal colour derived from one seed, full-round shapes, a state layer on everything.',
+        bg: 'Flat #fdf8fd — a near-white with a trace of the seed hue mixed in. Surfaces step up through #f7eff8 and #f0e6f6 to the container colour #eaddff.',
+        intent: 'Google’s Material 3: a personalised, highly accessible evolution of flat design. Colour is not picked per component — an entire tonal palette is derived from one seed hue and assigned to semantic roles. Shape is a token, not a decision. Every interactive surface carries a state layer at defined opacities. The discipline is what makes it work at scale; ignore the system and you have just made a pastel flat design.',
+        rules: [
+            'All colour derives from a single seed hue through a tonal ramp. Roles — primary, on-primary, primary-container, on-primary-container, surface, surface-variant — are assigned, never eyeballed.',
+            'The state layer is mandatory: the accent colour overlaid at 8% on hover, 12% on focus and pressed, 10% on drag.',
+            'Shape comes from tokens: 8px small, 12px medium, 16px large, 999px full. Buttons are full-round.',
+            'Elevation is a tonal shift plus a soft tinted shadow, never a hard drop shadow.'
+        ],
+        type: [
+            'A humanist sans at regular and medium weight; Material’s own scale is Display / Headline / Title / Body / Label.',
+            'Headings are normal weight and large rather than bold and small — that is the M3 signature.',
+            'Labels are 14px/500 with 0.1px tracking; body is 16px/400 at 1.5.',
+            'Never bold body text for emphasis; change the colour role instead.'
+        ],
+        form: [
+            'Radius: buttons 999px, cards 12–16px, sheets 28px on the leading edges only.',
+            'Shadow: 0 1px 3px rgba(103,80,164,.18) — tinted with the seed hue, never neutral black.',
+            'Primary #6750a4, secondary #7d5260, container #eaddff, on-surface #1c1b1f, outline #79747e.',
+            'FABs are 56px, full-round, filled with the primary container colour.'
+        ],
+        motion: [
+            'Ripple originates at the pointer position and expands to cover the element, 300–400ms, standard easing.',
+            'Emphasised easing (fast out, slow in) on anything that enters; standard easing on state changes.',
+            'Elevation changes are animated, not instant.'
+        ],
+        layout: 'Generous 16px baseline grid, 24px page margins, cards that stretch to the container. Navigation lives in a bar or rail rather than a top nav on small screens.',
+        comp: [
+            'Filled button — primary fill, on-primary label, 999px radius, 40px tall, state layer on interaction.',
+            'Tonal button — primary-container fill, on-primary-container label, same geometry.',
+            'Card — surface-variant fill, 12px radius, tinted 1dp shadow.',
+            'FAB — 56px, primary-container, 16px radius, 3dp elevation, ripple from pointer.'
+        ],
+        dos: [
+            'Derive the whole palette from one seed and stick to the role names.',
+            'Specify hover, focus, pressed and disabled for every control.',
+            'Let the tonal steps do the work that borders would do elsewhere.'
+        ],
+        donts: [
+            'Do not use pure black or pure white anywhere.',
+            'Do not use a neutral shadow — tint it with the seed.',
+            'Do not mix in sharp corners; the shape scale has no zero.'
+        ],
+        a11y: 'M3 is built around contrast: every on-* role is guaranteed against its paired surface, so use the pairs rather than inventing combinations. Ripples must respect prefers-reduced-motion by falling back to a plain state-layer fade.',
+        check: [
+            'Every colour in the build traces back to one seed hue.',
+            'Every control specifies all four interaction states.',
+            'Buttons are fully round.',
+            'No hard black shadow appears anywhere.'
+        ]
+    },
+
+    maximalism: {
+        canvas: 'canvasG', theme: 'theme-maximalism', label: 'Concept G', series: 'Series I (A–Z)',
+        name: 'Maximalism',
+        tagline: 'More is more. Whitespace is the enemy.',
+        bg: 'Hot #ff3366 with heavy diagonal black stripes at 16% over the whole surface. There is no calm region on the page.',
+        intent: 'A deliberate rejection of clean whitespace: clashing colours, overlapping elements, marquees, rotated stickers, layers fighting for the same pixels. It is not carelessness — a good maximalist page is tightly composed chaos, where the eye is given too many equally loud entry points and has to choose. Right for fashion drops, music festivals and portfolios that need to be remembered rather than understood.',
+        rules: [
+            'No region of the page may be empty. If you find whitespace, something goes in it.',
+            'At least four saturated hues in play at once, none of them harmonised.',
+            'Elements overlap and rotate. Nothing sits neatly inside its grid cell.',
+            'There is always something moving — a marquee, a rotation, a colour cycle.'
+        ],
+        type: [
+            'A 900-weight display face, uppercase, tracking-tighter, with a 2px black text-stroke so it survives any background.',
+            'Mix sizes violently: a 96px headline directly above 11px body is correct here.',
+            'Repeat text as texture — a phrase tiled across a marquee band is a legitimate element.',
+            'Multiple families are fine; discord is the point.'
+        ],
+        form: [
+            'Radius 0. Borders 2.5px solid black on everything. Hard 3px offset shadows.',
+            'Fills are flat and unmixed: #facc15, #22d3ee, #84cc16, #ff3366.',
+            'Stickers and chips rotate 10–30 degrees and sit half-off the elements they annotate.',
+            'Stripes, checks and dots as background fills rather than solid colour.'
+        ],
+        motion: [
+            'A continuously scrolling marquee band, at least one, ideally two running opposite directions.',
+            'Hover states rotate or scale rather than fade.',
+            'Colour cycling on borders and backgrounds is in keeping.'
+        ],
+        layout: 'Full-bleed, edge to edge, no container max-width. Layers stack with z-index rather than sitting in a flow. Bands of colour run the full width and butt directly against each other.',
+        comp: [
+            'Button — flat accent fill, black border, hard shadow, uppercase black-weight label, rotates 2° on hover.',
+            'Marquee band — full width, contrasting fill, repeated phrase with a star separator.',
+            'Sticker — rotated bordered rectangle or circle overlapping a card corner.',
+            'Card — flat fill on a clashing ground, black border, contents allowed to overflow the edge.'
+        ],
+        dos: [
+            'Let elements break out of their containers.',
+            'Use every accent at full saturation.',
+            'Compose the chaos — it should look loud, not broken.'
+        ],
+        donts: [
+            'Do not harmonise the palette.',
+            'Do not leave a quiet band “to let it breathe”.',
+            'Do not use this for anything with a task to complete.'
+        ],
+        a11y: 'This style is hostile by design, which is not an excuse. Keep body text on a solid, unpatterned fill; give the marquees a pause under prefers-reduced-motion; and make sure every interactive target is still 44px and still has a focus ring loud enough to find on this ground.',
+        check: [
+            'There is no empty region larger than a card.',
+            'Four or more saturated hues are visible at once.',
+            'At least one element overlaps another.',
+            'Something is in continuous motion — and it stops under reduced-motion.'
+        ]
+    },
+
+    minimalism: {
+        canvas: 'canvasH', theme: 'theme-minimalism', label: 'Concept H', series: 'Series I (A–Z)',
+        name: 'Swiss Minimalism',
+        tagline: 'International Typographic Style: grid, weight, and nothing else.',
+        bg: 'Pure #ffffff. Not off-white, not warm — white.',
+        intent: 'Rooted in the Swiss school: a strict grid, asymmetric composition, one sans-serif family, and a monochrome palette with at most one accent used sparingly. The content is the interface. Every decision is about position and weight rather than decoration. It is the hardest style on this page to fake, because there is nothing to hide behind.',
+        rules: [
+            'A visible twelve-column grid governs everything. Elements start and end on column lines, always.',
+            'Nothing is centred by default. Balance is achieved by weight and position, not symmetry.',
+            'One family, three weights, one accent (red, used perhaps twice per page).',
+            'Whitespace is a component. Large empty regions are compositional, not leftovers.'
+        ],
+        type: [
+            'A single neutral grotesque — Inter, Helvetica, Univers. Three weights: 300, 500, 700.',
+            'Headings are set tight (leading 0.95–1.05) and left-aligned, often spanning fewer columns than the container.',
+            'Body at 15–16px, 1.6 leading, ragged right — never justified.',
+            'Section numbering (01, 02, 03) in small uppercase is the one permitted ornament.'
+        ],
+        form: [
+            'Radius 0 everywhere.',
+            'Rules are 1px solid black; column guides at 12% black may remain visible.',
+            'No shadow, no gradient, no texture, no fill except black, white and the single accent #e5231b.',
+            'Images are full-bleed within their columns and never rounded.'
+        ],
+        motion: [
+            'Almost none. Colour transitions of 120ms on links.',
+            'If anything moves, it moves along the grid — no easing flourishes.',
+            'No scroll effects, no reveals.'
+        ],
+        layout: 'Twelve columns, fixed gutters, deliberate asymmetry. A heading may occupy columns 1–4 with the body in 6–10 and columns 11–12 left empty. Modules start at different rows to create tension.',
+        comp: [
+            'Button — black fill, white label, square, no radius; or a 1px black outline for secondary.',
+            'Section head — a number, a hairline rule, and a title, all on the same baseline.',
+            'Module — a column-spanning block with a rule above it and no border elsewhere.',
+            'Link — underlined at 1px with a 2px offset; colour change only on hover.'
+        ],
+        dos: [
+            'Let one large empty area exist and defend it.',
+            'Align optically as well as mathematically.',
+            'Use the accent for one thing per page and mean it.'
+        ],
+        donts: [
+            'Do not centre anything without a reason you could defend.',
+            'Do not add a second accent, a shadow, or a rounded corner.',
+            'Do not justify text.'
+        ],
+        a11y: 'Black on white is the easy part. Watch target size — square buttons at typographic scale often come out too small — and make sure the underline on links survives, since colour alone is not doing the work here.',
+        check: [
+            'Every element starts on a column line.',
+            'The accent appears at most twice.',
+            'border-radius, box-shadow and gradient are absent from the stylesheet.',
+            'The page reads correctly with all images removed.'
+        ]
+    },
+
+    retro: {
+        canvas: 'canvasI', theme: 'theme-retro', label: 'Concept I', series: 'Series I (A–Z)',
+        name: 'Y2K / Web 1.0',
+        tagline: 'Beveled chrome, system fonts, and the sixteen web-safe colours.',
+        bg: 'Teal #008080 — the Windows 95 desktop. Panels are #c0c0c0 with hard bevels; title bars are #000080 navy.',
+        intent: 'Nostalgia-driven revival of the pre-CSS web and the desktop it ran on: system fonts, visible bevels, tiled backgrounds, marquees, hit counters, guestbooks, and animation that exists because it could. Popular in indie games and Gen-Z digital culture, where its unpolished sincerity reads as the opposite of corporate.',
+        rules: [
+            'The bevel is the entire visual system: 1.5px white on the top and left edges, #404040 on the bottom and right. Inverted for pressed and inset states.',
+            'Radius 0. Antialiasing minimal. Nothing is smooth.',
+            'Colours come from the web-safe set — #008080, #c0c0c0, #000080, #ff0000, #ffff00. No hex you would have to think about.',
+            'Include at least one period artefact: a marquee, a visitor counter, an under-construction badge, a guestbook link.'
+        ],
+        type: [
+            'Courier New or a system serif/sans at default sizes. The point is that it looks unstyled.',
+            'Headings are bold, underlined, and blue (#0000ee) if they are links.',
+            'Centred text is correct here — this is the one style where it is period-accurate.',
+            'ALL CAPS with asterisk decoration *** LIKE THIS *** is a legitimate heading treatment.'
+        ],
+        form: [
+            'Window chrome: a navy title bar with a light-grey body and minimise/maximise/close boxes at the right.',
+            'Buttons are #c0c0c0 with the standard bevel; pressed inverts the bevel and shifts content 1px down-right.',
+            'Borders are 2px outset / inset, never solid.',
+            'Tiled background patterns are encouraged; so are horizontal rules.'
+        ],
+        motion: [
+            'A scrolling marquee, moving at an uncomfortable speed.',
+            'A blinking element — exactly one, and it must respect reduced-motion.',
+            'Hover changes are instant colour swaps.'
+        ],
+        layout: 'Centred, fixed-width (a nominal 800×600), table-like. Content sits inside a window frame. A status bar at the bottom with segmented cells is a strong finishing move.',
+        comp: [
+            'Window — navy title bar with a caption and control boxes, grey body, beveled outer edge.',
+            'Button — grey, beveled, bold navy label, inverts on press.',
+            'Counter — a zero-padded number in a black inset box with a mono face.',
+            'Menu bar — File Edit View Help in a beveled strip under the title bar.'
+        ],
+        dos: [
+            'Commit to the period. Half-hearted Y2K just looks dated.',
+            'Use the status bar and menu bar — they cost nothing and sell the whole thing.',
+            'Keep the palette to web-safe values.'
+        ],
+        donts: [
+            'Do not round anything or add a soft shadow.',
+            'Do not use a modern font.',
+            'Do not make the blink or marquee unavoidable — gate them.'
+        ],
+        a11y: 'Blinking and scrolling text are genuine WCAG failures, so they must stop under prefers-reduced-motion and must never carry information. Navy on grey clears contrast; blue-on-teal does not — keep body text inside the grey panels.',
+        check: [
+            'Every raised element has a light top-left and dark bottom-right edge.',
+            'The palette is web-safe.',
+            'At least one period artefact is present.',
+            'All motion halts under reduced-motion.'
+        ]
+    },
+
+    aurora: {
+        canvas: 'canvasJ', theme: 'theme-aurora', label: 'Concept J', series: 'Series I (A–Z)',
+        name: 'Aurora UI',
+        tagline: 'Animated mesh gradients: light phenomena as background.',
+        bg: 'Deep #0f0c29 with four heavily blurred colour fields — coral #ff6b6b, violet #a18cd1, mint #1dd1a1, amber #feca57 — drifting on long, unsynchronised loops.',
+        intent: 'Ethereal and ambient: the background is never static, and it is the design. Blurred colour fields drift across a dark ground like the aurora, and the interface floats on top as barely-there translucent panels. Heavily used by AI and Web3 product pages because it implies something alive is happening underneath.',
+        rules: [
+            'The mesh must actually move. Four blurred radial fields on 20–40s loops with different durations so they never resynchronise.',
+            'Blur radius is large — 60–120px. Individual orbs should never be identifiable as circles.',
+            'Panels are extremely light: white at 7–13% with a 1px white-at-22% border. Lighter than glassmorphism.',
+            'The ground stays dark. Aurora on a light background is a different, worse style.'
+        ],
+        type: [
+            'A soft geometric sans (Outfit) at light weights — 300 for display, 400 for body.',
+            'Headlines are very large and very light: 72px at weight 300 is the signature.',
+            'Wide tracking (0.2–0.3em) on small uppercase eyebrows.',
+            'White text throughout, dropping to 50% white for secondary.'
+        ],
+        form: [
+            'Radius 12–24px. Nothing sharp.',
+            'Borders 1px rgba(255,255,255,.22).',
+            'No shadows — depth is entirely the backdrop.',
+            'Panels may be very large; this style suits one big card better than many small ones.'
+        ],
+        motion: [
+            'Continuous, slow, non-repeating-looking drift of the colour fields.',
+            'Hover on panels raises opacity by 3–4%, 300ms.',
+            'Nothing snaps. Every transition is 300ms or longer.'
+        ],
+        layout: 'Very generous — 120px+ of vertical padding, a single centred column, one idea per screen. The emptiness is where the background gets to perform.',
+        comp: [
+            'Panel — rgba(255,255,255,.13), blur(16px), 1px white/22 border, 16px radius.',
+            'Button, primary — white at 45%, dark label; secondary is a 1px outline only.',
+            'Nav — white at 9%, blurred, hairline bottom border.',
+            'Eyebrow — 12px uppercase, 0.3em tracking, white at 70%.'
+        ],
+        dos: [
+            'Give each orb a different animation duration and delay.',
+            'Let the orbs extend beyond the viewport edges.',
+            'Keep the foreground sparse.'
+        ],
+        donts: [
+            'Do not use a static gradient — that is just a gradient.',
+            'Do not add more than four colour fields; it turns grey.',
+            'Do not put dense content on top of the moving areas.'
+        ],
+        a11y: 'Because the backdrop moves under the text, contrast varies over time. Either keep body text inside a panel with enough opacity to guarantee the floor, or restrict text to regions the orbs never reach. Freeze the mesh under prefers-reduced-motion.',
+        check: [
+            'The background is animated and the loops are not synchronised.',
+            'No orb is recognisable as a circle.',
+            'Panel opacity is below 15%.',
+            'The mesh stops under reduced-motion.'
+        ]
+    },
+
+    memphis: {
+        canvas: 'canvasK', theme: 'theme-memphis', label: 'Concept K', series: 'Series I (A–Z)',
+        name: 'Memphis',
+        tagline: '1980s Memphis Group: squiggles, terrazzo, clashing pastels, no grid.',
+        bg: 'Warm off-white #fffdf5 with a regular black dot grid at 16px spacing. The dots are the ground, not decoration.',
+        intent: 'Rebellious, colourful and geometric, after the 1980s Memphis Group: scattered squiggles, polka dots, terrazzo chips and clashing pastels dropped across the canvas to reject modernist restraint. It is playful rather than aggressive — where Neobrutalism shouts, Memphis is having fun at your expense.',
+        rules: [
+            'Loose shapes — circles, triangles, squiggles, chips — scattered around the content, rotated, at varying scales, and never aligned to the content grid.',
+            'The palette clashes on purpose: pink #f472b6, cyan #22d3ee, yellow #facc15, blue #3b82f6, all at once.',
+            'Everything is outlined in 2.5px black and cast with a hard offset shadow in a colour, not black.',
+            'The dot-grid or terrazzo ground is always present.',
+            'Applied as a brand system rather than as decoration, the weight shifts to the type: one word of the headline takes a clash colour against black, and the scatter retreats to the margins. That single substitution carries more brand recognition than the whole decorative layer.'
+        ],
+        type: [
+            'A heavy geometric display face (Unbounded) for headings, black weight, often with a black text-stroke over a colour fill.',
+            'Body copy in a plain sans; the type does not need to be as loud as the shapes.',
+            'Headings may sit at a slight rotation.',
+            'Chips and labels are uppercase, bold, in a yellow or cyan box with a black border.'
+        ],
+        form: [
+            'Radius 0 on rectangles; circles and squiggles are pure shapes with no container.',
+            'Border 2.5px #000 on every surface.',
+            'Shadow: 3–12px offset, zero blur, in #3b82f6 or another accent — a coloured shadow is the Memphis tell.',
+            'Squiggles are stroked paths with round caps at 5px, in yellow over black.'
+        ],
+        motion: [
+            'Scattered shapes bob or rotate gently on long loops.',
+            'Hover translates elements a few pixels diagonally, shadow following.',
+            'Nothing fades; everything is a snap or a drift.'
+        ],
+        layout: 'A conventional content column with the decoration deliberately breaking out of it — shapes overlap the container edges, sit behind text, and poke out from under cards.',
+        comp: [
+            'Card — white fill, 2.5px black border, coloured hard shadow, a chip overlapping one corner.',
+            'Button — accent fill, black border, coloured shadow, uppercase bold.',
+            'Chip — a small rotated square, circle or triangle absolutely positioned near a heading.',
+            'Squiggle — a zig-zag stroke, drawn twice (colour under black) for the outlined look.',
+            'Hero, brand application — a saturated yellow field, black display type at 900, exactly one word in the clash colour, and a single outlined CTA with a 4px black offset shadow.',
+            'Nav, brand application — a black wordmark on the yellow field with plain links; the nav is the one place the style stays quiet, so the hero can be loud.'
+        ],
+        dos: [
+            'Scatter at least five decorative shapes per screen.',
+            'Use a coloured drop shadow rather than a black one.',
+            'Let shapes sit both in front of and behind content.',
+            'When using it as a brand rather than a texture, move the clash into the headline and thin the scatter — the two loud layers compete if you keep both at full strength.'
+        ],
+        donts: [
+            'Do not align the decoration to the grid.',
+            'Do not harmonise the palette into a scheme.',
+            'Do not confuse it with Neobrutalism — that has one loud ground and black shadows; this has a light ground, coloured shadows and free-floating shapes.'
+        ],
+        a11y: 'Keep decorative shapes out of the text’s contrast path, mark them aria-hidden, and ensure the dot ground never sits directly behind body copy.',
+        check: [
+            'At least five free-floating shapes are present.',
+            'Shadows are coloured, not black.',
+            'Four or more clashing hues appear.',
+            'Decoration is aria-hidden.'
+        ]
+    },
+
+    wireframe: {
+        canvas: 'canvasL', theme: 'theme-wireframe', label: 'Concept L', series: 'Series I (A–Z)',
+        name: 'Blueprint / Line Art',
+        tagline: 'The skeleton, annotated: every element measured and labelled.',
+        bg: 'Blueprint blue #0044cc with a 16px white grid at 14% opacity running edge to edge.',
+        intent: 'Strip away all surface styling to expose the structure underneath, then annotate it. Dimension lines, dashed proposed edges, revision numbers, a legend. Nothing is decorative — or rather, the annotation is the decoration. Used by developer tools, architectural portfolios and technical products to claim precision.',
+        rules: [
+            'Everything is line. Fills are translucent navy at 20–35%; there are no solid surfaces.',
+            'Solid stroke means committed; dashed stroke means proposed or placeholder. Keep that distinction honest.',
+            'Annotate for real: dimension ticks with measurements, element labels, a revision number, a sheet count, a legend.',
+            'The grid is visible at all times and everything aligns to it.'
+        ],
+        type: [
+            'Monospace throughout — IBM Plex Mono or Courier. There is no second family.',
+            'Uppercase with wide tracking (0.15–0.3em) for headings and labels.',
+            'Small sizes: 11–13px for annotation, 14px body. Only the section title is large.',
+            'Underscores and double colons as separators — structural_analysis, CONCEPT L :: sheet 12/26.'
+        ],
+        form: [
+            'Radius 0. Borders 1px rgba(255,255,255,.7).',
+            'Dashed borders use a 3px/3px pattern.',
+            'No shadow, no gradient, no fill that is not translucent navy.',
+            'Corner ticks and dimension arrows drawn as 1px strokes.'
+        ],
+        motion: [
+            'Effectively none. This is a printed drawing.',
+            'Hover may reveal an extra annotation or brighten a stroke.',
+            'No transitions longer than 100ms.'
+        ],
+        layout: 'Rigid grid, everything snapped, with margins wide enough to hold annotations outside the content. A title block in one corner carrying revision, scale and sheet number.',
+        comp: [
+            'Panel — translucent navy, 1px white border, a mono label in the top-left corner.',
+            'Dimension line — a horizontal rule with end ticks and a centred measurement label.',
+            'Placeholder — a dashed rectangle with a diagonal cross or a 20% fill.',
+            'Legend — a small block explaining stroke conventions.'
+        ],
+        dos: [
+            'Give measurements real values that match the layout.',
+            'Use the dashed/solid distinction meaningfully.',
+            'Include a title block.'
+        ],
+        donts: [
+            'Do not add a filled surface or a shadow.',
+            'Do not use a proportional font.',
+            'Do not annotate decoratively with numbers that mean nothing.'
+        ],
+        a11y: 'White on #0044cc is adequate, but 55%-opacity white for secondary text is not — keep it above 70% for anything readable. Mark decorative dimension lines aria-hidden so screen readers are not read a drawing.',
+        check: [
+            'The grid is visible and everything aligns to it.',
+            'Every major element carries a label or a measurement.',
+            'No solid fills or shadows exist.',
+            'The whole build is monospaced.'
+        ]
+    },
+
+    clay: {
+        canvas: 'canvasM', theme: 'theme-clay', label: 'Concept M', series: 'Series I (A–Z)',
+        name: 'Claymorphism',
+        tagline: 'Saturated, inflated, tactile: two inner shadows and an oversized radius.',
+        bg: 'A pale three-stop gradient — #e8ecff → #f6e9ff → #ffeef6 — so the saturated clay objects have somewhere soft to sit.',
+        intent: 'Often confused with Neumorphism but built the opposite way. Neumorphism is a monochrome surface lit from outside; clay is saturated colour with two inner shadows — a bright rim across the top, a dark pool at the bottom — plus a very large radius, so objects look inflated rather than extruded. Friendly, tactile, and everywhere in fintech and edtech mobile apps.',
+        rules: [
+            'Two inner shadows on every object: inset 0 8px 12px rgba(255,255,255,.45) at the top, inset 0 -10px 14px rgba(0,0,0,.22) at the bottom.',
+            'One outer shadow in the object’s own hue, offset down and blurred: 5px 7px 12px rgba(124,107,245,.4).',
+            'Radius is oversized — 24–32px on cards, and never below 14px on anything.',
+            'Objects are saturated fills on a pale ground. The colour belongs to the object, not the page.'
+        ],
+        type: [
+            'A rounded geometric sans (Outfit) at 500–800 weight.',
+            'White text on the clay objects; a muted slate for text on the pale ground.',
+            'Nothing thin — light weights look wrong against inflated forms.',
+            'Generous letter spacing on small labels.'
+        ],
+        form: [
+            'Card radius 28px, button radius 16–20px, avatar and icon containers fully round.',
+            'Fills: violet #7c6bf5, mint #4fd1c5, blush #ff8fab. High chroma, mid lightness.',
+            'No borders — the rim highlight replaces them.',
+            'Icons sit inside their own small clay chips rather than floating on the card.'
+        ],
+        motion: [
+            'Press: scale(0.97) and deepen the bottom inner shadow, 140ms. It should look squeezed, not pushed.',
+            'Hover: lift 3px and increase the outer shadow blur.',
+            'Easing is soft — cubic-bezier(.2,.8,.3,1).'
+        ],
+        layout: 'Chunky and spacious: large elements, 24–32px gaps, few of them per screen. Clay does not do density.',
+        comp: [
+            'Card — saturated fill, 28px radius, both inner shadows plus the hued outer shadow, 32px padding.',
+            'Button — same construction at 16px radius; squeezes on press.',
+            'Icon chip — a 48px fully-round clay object in a secondary hue.',
+            'Input — the inverse: pale fill with only the dark inner shadow, so it reads as a dent.'
+        ],
+        dos: [
+            'Keep the ground pale and the objects saturated.',
+            'Use the object’s own hue in its drop shadow.',
+            'Make the radius larger than feels reasonable.'
+        ],
+        donts: [
+            'Do not use grey objects — that is Neumorphism (Concept D).',
+            'Do not add borders.',
+            'Do not pack elements tightly; the shadows need room.'
+        ],
+        a11y: 'White on the mid-lightness fills is often marginal — check each fill and darken it rather than reaching for grey text. The press animation is a scale, so it must be muted under prefers-reduced-motion.',
+        check: [
+            'Every object has two inner shadows and one hued outer shadow.',
+            'No radius below 14px.',
+            'The page background is paler than every object on it.',
+            'No element has a border.'
+        ]
+    },
+
+    organic: {
+        canvas: 'canvasN', theme: 'theme-organic', label: 'Concept N', series: 'Series I (A–Z)',
+        name: 'Organic Naturalism',
+        tagline: 'Earth tones, paper grain, and borders that never sit still.',
+        bg: 'Warm sand #f4ebd0 with two large, heavily blurred sage-green fields bleeding in from opposite corners, and a fine grain overlay across everything.',
+        intent: 'A rejection of harsh geometry in favour of fluid, asymmetric shapes that behave like things that grew rather than things that were drawn. Earth tones, tactile paper grain, and soft irregular borders that slowly shift shape rather than sitting still. Right for wellness, food, sustainability and anything that wants to feel handmade.',
+        rules: [
+            'Blob shapes over rectangles: border-radius given as four asymmetric pairs (e.g. 60% 40% 30% 70% / 60% 30% 70% 40%), animated slowly between two such values.',
+            'The palette is entirely earth: sage, moss, clay, sand, bark. No pure black, no pure white, no saturated hue.',
+            'A grain overlay sits over the whole surface at 15–20% — without it the style reads as flat and digital.',
+            'Nothing is symmetric. Asymmetry is the organising principle.'
+        ],
+        type: [
+            'A humanist sans at light weight for display (300), regular for body.',
+            'Large, airy headings with generous leading (1.2+) — nothing tight or condensed.',
+            'Ink is deep forest #2c4027 rather than black; secondary is #6d8465.',
+            'Small labels are uppercase with wide tracking, inside pill outlines.'
+        ],
+        form: [
+            'Card radius 14–24px, or an organic blob radius on decorative elements.',
+            'Borders are 1px in a muted mid-green, used sparingly.',
+            'Shadows are soft, warm and low-contrast — never neutral grey.',
+            'Surfaces are sage #b6c9a6 and #cdd9c0 on the sand ground.'
+        ],
+        motion: [
+            'Blob morph: 8–20s ease-in-out loops between two border-radius values. It should be slow enough that you notice it only after a while.',
+            'Hover transitions are 400ms and gentle.',
+            'Nothing snaps, nothing bounces.'
+        ],
+        layout: 'Asymmetric with off-centre focal points, wide margins, and content that follows an irregular rhythm rather than a strict grid.',
+        comp: [
+            'Card — sage fill on sand, soft warm shadow, generous radius, grain visible through it.',
+            'Blob — a decorative morphing shape behind or beside the content.',
+            'Pill label — 1px outline, fully round, uppercase micro-text.',
+            'Button — solid moss fill, sand label, 999px radius.'
+        ],
+        dos: [
+            'Let the grain show on every surface.',
+            'Use at least one continuously morphing shape.',
+            'Keep the palette desaturated and warm.'
+        ],
+        donts: [
+            'Do not use pure black, pure white or any saturated colour.',
+            'Do not make anything symmetric.',
+            'Do not use sharp corners.'
+        ],
+        a11y: 'Earth palettes drift toward low contrast — keep body text at #2c4027 on the light grounds and do not use #6d8465 below 16px. Blob morphing is continuous, so pause it under prefers-reduced-motion.',
+        check: [
+            'A grain layer covers the whole page.',
+            'At least one shape morphs continuously.',
+            'No hex in the palette is fully saturated.',
+            'Nothing on the page is symmetric.'
+        ]
+    },
+
+    synthwave: {
+        canvas: 'canvasO', theme: 'theme-synthwave', label: 'Concept O', series: 'Series I (A–Z)',
+        name: 'Outrun / Synthwave',
+        tagline: 'Chrome sunset, neon horizon, a grid that never stops running.',
+        bg: 'A vertical gradient from #11001c through #3a015c to #4f000b, a banded sun arc at the horizon, and a perspective grid floor scrolling toward the viewer.',
+        intent: 'Nostalgia for a future that never happened. Dark purples, a striped chrome sunset, an infinite neon gridline horizon. Hyper-stylised and unembarrassed about it. It dominates arcade-style games, synth music platforms and hacker-culture lore, and it lives or dies on the horizon: build the grid floor and the sun first, then put an interface on them.',
+        rules: [
+            'The perspective grid floor with a fixed horizon line is mandatory and must animate toward the viewer.',
+            'The sun is a semicircle filled with a vertical gradient (#fff05e → #f72585 → #7209b7) and cut by horizontal bands.',
+            'Two neons: magenta #f72585 and cyan #4cc9f0. Glow via text-shadow and box-shadow, never via lighter fills.',
+            'Radius 0. This is a 1984 idea of the future, and it has no rounded corners.'
+        ],
+        type: [
+            'A wide grotesque (Space Grotesk) in black weight, uppercase, italic, tracking-tight.',
+            'Headlines carry a stacked chrome gradient fill and a magenta glow.',
+            'Body copy in the same family at 400, pale pink #ffd9f2.',
+            'Everything display-scale is oversized — the headline should dominate the viewport.'
+        ],
+        form: [
+            'Panels: rgba(25,0,45,.6) with a 1px cyan border and a magenta glow.',
+            'Radius 0, borders 1px, glow 0 0 12px in the accent.',
+            'Chrome effects use a multi-stop vertical gradient with a hard midpoint.',
+            'Horizontal scan bands across the sun and headline are part of the vocabulary.'
+        ],
+        motion: [
+            'The grid floor scrolls continuously toward the viewer on a linear loop.',
+            'Glow pulses gently on primary actions.',
+            'Hover inverts panel and accent instantly.'
+        ],
+        layout: 'A single centred column over a full-bleed horizon. Content sits above the horizon line; the grid occupies the lower third. Very little else on the page.',
+        comp: [
+            'Button — transparent, 1px cyan border, magenta glow, uppercase italic label.',
+            'Panel — translucent purple, cyan hairline, glow, no radius.',
+            'Horizon — a full-width grid floor with a 1px bright line at the horizon.',
+            'Sun — a banded semicircle behind the headline.'
+        ],
+        dos: [
+            'Put the horizon at roughly 70% of the viewport height.',
+            'Let the headline overlap the sun.',
+            'Keep the ground genuinely dark between the neons.'
+        ],
+        donts: [
+            'Do not round anything.',
+            'Do not add a third accent hue.',
+            'Do not use this for dense content — the background is too loud.'
+        ],
+        a11y: 'Glow and gradient text both eat contrast. Keep body copy off the sun and the grid, and give the perspective scroll a stop under prefers-reduced-motion — a continuously advancing grid is a vestibular trigger.',
+        check: [
+            'A perspective grid floor is present and animating.',
+            'The sun is banded, not solid.',
+            'Only two accent hues are used.',
+            'The grid animation stops under reduced-motion.'
+        ]
+    },
+
+    popart: {
+        canvas: 'canvasP', theme: 'theme-popart', label: 'Concept P', series: 'Series I (A–Z)',
+        name: 'Comic / Pop Art',
+        tagline: 'Halftone fields, heavy outlines, primaries, and panels that read in sequence.',
+        bg: 'Yellow #facc15 covered in a regular red halftone dot field at 12px spacing. The dots are printed, not blurred.',
+        intent: 'Loud, narrative and highly graphic, after Lichtenstein and the newsprint comic. Halftone dot fields, stark black outlines, unmixed primary colours, and content arranged in panels that read in sequence. The reading order is part of the design — panel 1 of 2, panel 2 of 2.',
+        rules: [
+            'Halftone is a real dot field, regular and visible, not a gradient or a noise texture.',
+            'Every surface has a 3px solid black outline and a 4px hard offset shadow.',
+            'Primaries only: red #ef4444, blue #3b82f6, yellow #facc15, black and white.',
+            'Content is panelled and numbered so the sequence is explicit.'
+        ],
+        type: [
+            'A heavy display face, uppercase, with a 2px black text-stroke over a primary fill.',
+            'Sound effects (POW!, ZAP!) set at display scale inside a burst shape are a legitimate element.',
+            'Body copy in a plain bold sans, sentence case, inside a white panel.',
+            'Captions in a small bold uppercase strip along a panel edge.'
+        ],
+        form: [
+            'Radius 0. Border 3px #000. Shadow 4px 4px 0 #000.',
+            'Speech balloons are white with a 3px black outline and a triangular tail.',
+            'Burst shapes are irregular many-pointed stars in a primary fill with a black outline.',
+            'Fills are flat — the halftone provides all the tonal variation there is.'
+        ],
+        motion: [
+            'Hover pops: scale(1.03) with the shadow offset increasing.',
+            'Panel entrances snap in rather than fade.',
+            'A sound-effect burst may rotate slightly on hover.'
+        ],
+        layout: 'A comic page: two to four panels of unequal size, read left to right, top to bottom, with visible gutters. Panels may be tilted a degree or two.',
+        comp: [
+            'Panel — white fill, 3px black border, hard shadow, a numbered caption strip.',
+            'Speech balloon — white, outlined, with a tail pointing at its source.',
+            'Button — primary fill, black outline, hard shadow, uppercase heavy label.',
+            'Burst — a star polygon behind a short exclamation.'
+        ],
+        dos: [
+            'Number the panels.',
+            'Let the halftone show through on at least one large area.',
+            'Use all three primaries.'
+        ],
+        donts: [
+            'Do not blend or gradient a fill.',
+            'Do not soften the outlines.',
+            'Do not use a secondary or tertiary colour.'
+        ],
+        a11y: 'Keep body copy on the flat white panels, never on the halftone. Sound effects and bursts are decorative — mark them aria-hidden so they are not read out.',
+        check: [
+            'A visible halftone dot field is present.',
+            'Every surface has a 3px black outline and a hard shadow.',
+            'Only primaries, black and white appear.',
+            'Panels are numbered and read in a clear order.'
+        ]
+    },
+
+    zen: {
+        canvas: 'canvasQ', theme: 'theme-zen', label: 'Concept Q', series: 'Series I (A–Z)',
+        name: 'Quiet Technology',
+        tagline: 'Absolute reduction: calm chosen over engagement.',
+        bg: 'Warm near-white #faf8f5. Surfaces are #ffffff and #fdfcfa — differences you have to look for.',
+        intent: 'Everything dialled down. Vast whitespace, muted low-contrast typography, and a deliberate absence of anything that competes for attention. It prioritises mental calm over engagement metrics: no badges, no counts, no notifications, no urgency. Interface as meditation. It is the hardest style to sell and the easiest to live with.',
+        rules: [
+            'Whitespace is the primary material. 120–200px of vertical padding between blocks, and one idea per screen.',
+            'Contrast is deliberately low but never below the legal floor — muted, not unreadable.',
+            'No colour that could be called an accent. The palette is warm greys with a stone tint.',
+            'Nothing pulses, badges, counts, or asks. Remove any element whose job is to attract.'
+        ],
+        type: [
+            'A serif or a very light sans at 300–400, set large (18–20px body) with 1.8 leading.',
+            'Headings are only slightly larger than body and never bold — hierarchy comes from space, not weight.',
+            'Italic is permitted and is often the only emphasis available.',
+            'Micro-labels at 10–11px, uppercase, 0.4em tracking, very pale.'
+        ],
+        form: [
+            'Radius 3px — present but barely. Borders 1px in a pale stone.',
+            'No shadows. No gradients. One faint concentric-circle motif is the only permitted ornament.',
+            'Surfaces sit within 2% lightness of each other.',
+            'Ink #8a8a8a for body, #b9b2a7 for anything secondary.'
+        ],
+        motion: [
+            'Transitions are 400–600ms and touch opacity only.',
+            'Nothing enters on scroll. Nothing loops.',
+            'Hover is a barely perceptible darkening.'
+        ],
+        layout: 'A narrow centred column (max 40rem) surrounded by far more empty space than seems reasonable. Sections separated by 160px, not by rules.',
+        comp: [
+            'Button — 1px pale border, no fill, ink label, 3px radius; fills to a pale stone on hover.',
+            'Card — white on the warm ground, 1px hairline, no shadow, 48px padding.',
+            'Divider — space, not a rule. Use a rule only when space genuinely cannot separate.',
+            'Nav — the same colour as the page, no border, no blur, links at 40% ink.'
+        ],
+        dos: [
+            'Delete elements until removing another would break comprehension, then stop.',
+            'Let a screen contain one thing.',
+            'Use time as a design material — slow transitions read as calm.'
+        ],
+        donts: [
+            'Do not add a colour accent “just for the CTA”.',
+            'Do not use shadow to separate; use space.',
+            'Do not include any count, badge, or urgency cue.'
+        ],
+        a11y: 'The low contrast is the risk. #8a8a8a on #faf8f5 is roughly 3.3:1 — acceptable at 18px+ but not below, so hold body size at 18px minimum, and never use #b9b2a7 for anything a user must read.',
+        check: [
+            'No element on the page exists to attract attention.',
+            'Body text is 18px or larger.',
+            'There are no shadows and no accent colour.',
+            'Vertical space between sections exceeds 120px.'
+        ]
+    },
+
+    riso: {
+        canvas: 'canvasR', theme: 'theme-riso', label: 'Concept R', series: 'Series I (A–Z)',
+        name: 'Risograph',
+        tagline: 'Overlapping ink plates, multiplied, one millimetre out of register.',
+        bg: 'Uncoated paper #f7f4ed with a visible grain overlay at 7%. The paper is a colour, not white.',
+        intent: 'Emulating the stencil duplicator: two or three bright ink plates printed one after another, blended by multiplication where they overlap, over a visibly textured paper stock, with a millimetre of misregistration where the drum never quite lines up. The imperfection is the aesthetic — clean riso is a contradiction.',
+        rules: [
+            'Ink layers use mix-blend-mode: multiply. Where two plates overlap, a third darker colour appears. That overlap must be visible somewhere on the page.',
+            'Misregistration is mandatory: duplicate key elements offset 2–4px in a second plate colour.',
+            'Two or three plate colours only — fluorescent pink #ff48b0, cyan #00a8cc, yellow #ffd400 — plus a near-black key.',
+            'Paper grain overlays everything at 5–8%.'
+        ],
+        type: [
+            'Monospace or a chunky grotesque, set large and tight.',
+            'Headlines get the misregistration treatment: the same text rendered twice, offset, in two plate colours, multiplied.',
+            'Body copy in near-black #1a1a1a at 15–16px.',
+            'Labels uppercase, small, wide-tracked — they read as print marks.'
+        ],
+        form: [
+            'Radius 0. Borders 1.5px #1a1a1a.',
+            'Fills are flat plate colours at 70–90% opacity so the paper shows through.',
+            'No shadows — print has no shadows.',
+            'Crop marks and a plate legend (“3-plate run”) at the page edges are in keeping.'
+        ],
+        motion: [
+            'Almost none. This is a printed object.',
+            'Hover may nudge the misregistration offset by a pixel.',
+            'No fades, no reveals.'
+        ],
+        layout: 'Poster-like: a large headline, a strong image or shape block, and a small dense block of type. Content is arranged for the page rather than for scrolling.',
+        comp: [
+            'Headline — rendered twice, offset 3px, in pink and cyan, multiplied.',
+            'Ink block — a flat rectangle of plate colour behind text, deliberately misaligned with the text it highlights.',
+            'Button — flat plate fill, 1.5px key border, square.',
+            'Plate legend — small swatches with ink names in a corner.'
+        ],
+        dos: [
+            'Make at least one overlap visible so the multiply is legible.',
+            'Keep the paper colour warm and slightly dirty.',
+            'Let the misregistration be obvious enough to be a choice.'
+        ],
+        donts: [
+            'Do not use more than three plates.',
+            'Do not add gradients — riso cannot print them.',
+            'Do not clean up the registration.'
+        ],
+        a11y: 'Misregistered headline text is hard to read at small sizes, so restrict the effect to display scale and keep body copy on a single clean plate. Duplicate text layers must be aria-hidden so the heading is not announced twice.',
+        check: [
+            'At least one visible multiply overlap producing a third colour.',
+            'Key elements are misregistered by 2–4px.',
+            'Grain covers the whole page.',
+            'Duplicate text layers are aria-hidden.'
+        ]
+    },
+
+    cosmic: {
+        canvas: 'canvasS', theme: 'theme-cosmic', label: 'Concept S', series: 'Series I (A–Z)',
+        name: 'Deep Space',
+        tagline: 'Abyssal black, a live starfield, and ethereal orb glow.',
+        bg: 'Near-black #05060b with a broad indigo radial bloom near the top and a field of ~90 stars at varying opacity, slowly twinkling.',
+        intent: 'Beyond ordinary dark mode: abyssal blacks rather than dark greys, a live starfield, and glowing orb gradients that imply enormous unexplored scale. Adopted heavily by AI infrastructure and Web3 protocol pages, where the message is that something vast is happening behind the interface.',
+        rules: [
+            'The ground is genuinely black (#05060b), not slate. That difference is the whole style.',
+            'A starfield is present and alive — individual stars at random opacity, twinkling on unsynchronised loops.',
+            'Surfaces are white at 3–6% — far lighter than glassmorphism. They should be barely visible.',
+            'Indigo/violet glow (#6366f1, #a78bfa) is the only colour, used as light rather than as fill.'
+        ],
+        type: [
+            'A techno-grotesque (Space Grotesk) at 700 for display, tracking-tighter, very large.',
+            'Body copy at 15–16px in #e2e8f0, secondary in #5a6b85.',
+            'Small caps eyebrows with wide tracking, in the accent at 70%.',
+            'Nothing serif, nothing warm.'
+        ],
+        form: [
+            'Radius 8–12px. Borders 1px rgba(255,255,255,.1).',
+            'Glow: 0 0 40px rgba(99,102,241,.5) on primary elements only.',
+            'Orbs are large radial gradients at low opacity, blurred, placed behind content.',
+            'No solid fills brighter than 6% white except on the primary action.'
+        ],
+        motion: [
+            'Stars twinkle on 3–8s loops with random delays.',
+            'Orbs drift very slowly — 40s+.',
+            'Hover raises surface opacity by 2% and intensifies the glow.'
+        ],
+        layout: 'Wide and sparse, centred, with enormous vertical padding. One statement per screen, floating in black.',
+        comp: [
+            'Panel — rgba(255,255,255,.06), 1px white/10 border, 10px radius.',
+            'Button, primary — indigo fill with an indigo glow; secondary is a hairline outline.',
+            'Starfield — a fixed full-viewport layer behind all content.',
+            'Orb — a blurred radial gradient positioned to bleed off one edge.'
+        ],
+        dos: [
+            'Keep the black true and the surfaces nearly invisible.',
+            'Let the starfield sit behind everything, fixed rather than scrolling.',
+            'Reserve glow for a single element per screen.'
+        ],
+        donts: [
+            'Do not lighten the ground to slate — that is Baseline X.',
+            'Do not add a warm hue.',
+            'Do not glow everything; glow means importance.'
+        ],
+        a11y: 'Very low-opacity surfaces mean borders carry the structure — keep them at 10% or above. #5a6b85 fails at body size on this ground; use #94a3b8 or brighter for anything readable. Twinkle must stop under reduced-motion.',
+        check: [
+            'The background is under #0a0a12 in lightness.',
+            'A live starfield is present and stops under reduced-motion.',
+            'Surface opacity is at or below 6%.',
+            'Only one element per screen glows.'
+        ]
+    },
+
+    terminal: {
+        canvas: 'canvasT', theme: 'theme-terminal', label: 'Concept T', series: 'Series I (A–Z)',
+        name: 'Command Line Interface',
+        tagline: 'Monospaced text on black, phosphor glow, no graphical UI at all.',
+        bg: 'Black #050505 with a 3px scan-line overlay at 6% green. Surfaces are #080f0c — black with a trace of phosphor.',
+        intent: 'The developer aesthetic taken to its conclusion: no graphical interface, purely monospaced text, stark contrast, and phosphor glow. Layout is done with characters. It signals hardcore technical competence and bypasses conventional UX entirely — which is exactly why it works for developer tools and exactly why it fails for everything else.',
+        rules: [
+            'Monospace everywhere, one size, one family. Layout is achieved with spaces and box-drawing characters, not with CSS positioning.',
+            'One colour: phosphor green #10b981 on black, with #34d399 for emphasis and #0b6b4d for dim.',
+            'Every line of text is prefixed like terminal output — a prompt, a bracketed status, or a comment marker.',
+            'A blinking block cursor is present somewhere on the page at all times.'
+        ],
+        type: [
+            'IBM Plex Mono or any true monospace, 14px, 1.5 leading. One size for the whole page.',
+            'Emphasis is uppercase or a brighter green, never bold and never larger.',
+            'Text glows: text-shadow 0 0 6px currentColor at low alpha.',
+            'ASCII art and box-drawing characters are legitimate structural elements.'
+        ],
+        form: [
+            'Radius 0. Borders 1px #10b981.',
+            'Panels are drawn with borders or with box-drawing characters — both are correct.',
+            'No shadow except the phosphor text glow.',
+            'Scan lines at 3px period, 6% opacity, over everything.'
+        ],
+        motion: [
+            'A typing animation on at least one line, 40–60ms per character, with a pause at the end of each line.',
+            'The cursor blinks on a 1s square wave.',
+            'Nothing else moves.'
+        ],
+        layout: 'A single left-aligned column at a fixed character measure (80 columns is right). No centring, no grid, no cards.',
+        comp: [
+            'Prompt line — user@host:~$ followed by the typed command and a block cursor.',
+            'Output block — bracketed status lines: [ OK ], [ FAILED ], indented two spaces.',
+            'Button — a bordered box with a bracketed label; hover inverts to green fill with black text.',
+            'Table — drawn with pipe and dash characters, columns padded to width.'
+        ],
+        dos: [
+            'Keep to 80 columns.',
+            'Use real command syntax; fake commands that would not parse break the spell.',
+            'Let output scroll rather than paginate.'
+        ],
+        donts: [
+            'Do not use a proportional font anywhere, including headings.',
+            'Do not add a second colour.',
+            'Do not use a card, a shadow or a rounded corner.'
+        ],
+        a11y: 'Green on black clears contrast comfortably, but a typing animation must not be the only way content appears — render the full text and animate its reveal, so it is present for screen readers and under reduced-motion. Keep the blink gated too.',
+        check: [
+            'The entire build is monospaced at one size.',
+            'Only phosphor green and black appear.',
+            'A cursor is blinking, and it stops under reduced-motion.',
+            'The measure is around 80 characters.'
+        ]
+    },
+
+    util: {
+        canvas: 'canvasU', theme: 'theme-util', label: 'Concept U', series: 'Series I (A–Z)',
+        name: 'Utilitarian',
+        tagline: 'Industrial density: hazard colour, harsh borders, no comfort.',
+        bg: 'Machine grey #e5e5e5 with white work surfaces. A hazard-striped band in amber and black runs along the top and bottom edges.',
+        intent: 'Designed for heavy data and operational environments — control rooms, logistics, manufacturing. Hazard colours, harsh borders, condensed tables and uncompromising density. It sacrifices comfort for the ability to read forty rows at a glance and spot the one that is wrong. Anything decorative is removed as a distraction.',
+        rules: [
+            'Density is the requirement: table rows at 28–32px, 8px cell padding, no zebra striping wider than 1px hairlines.',
+            'Amber #fbbf24 is a hazard signal, not a brand colour — it appears on warnings, edges and active state only.',
+            'Every region is bordered in 2px black. Regions butt together; they never float.',
+            'Everything is labelled with an identifier: spec numbers, revision, class, unit ID.'
+        ],
+        type: [
+            'A neutral sans for prose, a monospace for every number, ID and status.',
+            'Uppercase, tracked labels at 10–11px on every panel header.',
+            'Body at 13–14px. This style runs smaller than usual on purpose.',
+            'Status words in mono, uppercase: NOMINAL, WATCH, FAULT, STANDBY.'
+        ],
+        form: [
+            'Radius 0. Borders 2px #000, hard 3px offset shadows on raised controls.',
+            'Hazard stripes: 8px amber diagonals on black, used on top and bottom edges of a region.',
+            'Fills are white, machine grey, black and amber. Nothing else.',
+            'Tables have visible 1px grid lines on every cell.'
+        ],
+        motion: [
+            'None, except a status indicator blink for FAULT states.',
+            'Hover is an instant background change to amber at 15%.',
+            'No transitions over 80ms.'
+        ],
+        layout: 'Full-width, edge to edge, no max-width container. Regions tile with 2px seams. A header strip carries spec, revision and live status.',
+        comp: [
+            'Data table — mono figures, 1px cell borders, status column with a coloured square and the word.',
+            'Panel header — black bar, white uppercase label, revision code right-aligned.',
+            'Button — white fill, 2px black border, hard shadow, uppercase bold; amber fill for the destructive one.',
+            'Hazard band — an 8px striped strip at a region boundary.'
+        ],
+        dos: [
+            'Right-align numeric columns and set them in mono so digits line up.',
+            'Label every region with an identifier.',
+            'Use amber sparingly enough that it still means “look here”.'
+        ],
+        donts: [
+            'Do not add whitespace for comfort.',
+            'Do not round, soften or gradient anything.',
+            'Do not encode status in colour alone — write the word.'
+        ],
+        a11y: 'Density and target size pull against each other; keep interactive rows at 32px minimum even when the display rows are tighter. Status must always be stated in text as well as colour, which the style already does — keep it.',
+        check: [
+            'Every number is monospaced and right-aligned.',
+            'Every region has an identifier and a 2px border.',
+            'Amber appears only on warnings and active state.',
+            'Status is written in words, not just coloured.'
+        ]
+    },
+
+    vaporwave: {
+        canvas: 'canvasV', theme: 'theme-vaporwave', label: 'Concept V', series: 'Series I (A–Z)',
+        name: 'Vaporwave',
+        tagline: 'Pastel gradients, Japanese type, classical statuary, an endless chequered horizon.',
+        bg: 'A diagonal pastel gradient — #ff71ce → #b967ff → #01cdfe — with a pale sun disc and a chequered perspective floor.',
+        intent: 'A surreal blend of early-90s web design, pastel gradients, glitch art and classical statuary — a critique of consumer capitalism wrapped in hyper-nostalgic dream imagery. Distinct from Synthwave: that is dark, neon and aggressive; this is pastel, hazy and melancholy. The typography is stretched across the full width, and the sun never sets.',
+        rules: [
+            'Full-width letterspacing on the display type — individual letters spread edge to edge (V A P O R W A V E).',
+            'The palette is pastel, not neon: pink #ff71ce, lavender #b967ff, cyan #01cdfe. Never fully saturated.',
+            'A chequered or gridded perspective floor with a pale sun above it.',
+            'Japanese katakana as decorative type is part of the vocabulary, set alongside the Latin.'
+        ],
+        type: [
+            'A grotesque in black weight, italic, uppercase, with letter-spacing pushed until the line fills its container.',
+            'Body copy inside a translucent white panel so it stays readable over the gradient.',
+            'Katakana set at display scale in a lighter weight as an accompanying line.',
+            'Chromatic aberration on headlines — red and cyan copies offset by 2px — is in keeping.'
+        ],
+        form: [
+            'Radius 6px — small but present, unlike Synthwave.',
+            'Panels are white at 20–26% with a 1px white-at-50% border and a backdrop blur.',
+            'No hard shadows; depth comes from translucency.',
+            'Everything sits over the gradient, which is never covered entirely.'
+        ],
+        motion: [
+            'The floor scrolls slowly toward the horizon.',
+            'The gradient shifts hue over a very long loop (60s+).',
+            'Occasional glitch displacement on hover, brief and irregular.'
+        ],
+        layout: 'Centred, symmetric, poster-like. One enormous headline, a short paragraph in a glass panel, and a lot of sky.',
+        comp: [
+            'Headline — full-width letterspaced, italic, black weight, white with a soft shadow.',
+            'Panel — white at 25%, blurred, 1px white border, 6px radius, bold body copy.',
+            'Horizon — chequered floor in the lower third with a pale sun disc above it.',
+            'Accent line — katakana at display scale, low opacity.'
+        ],
+        dos: [
+            'Stretch the display type until it fills the measure exactly.',
+            'Keep the palette pastel and slightly washed out.',
+            'Leave a lot of empty sky.'
+        ],
+        donts: [
+            'Do not use neon saturation — that is Synthwave (Concept O).',
+            'Do not fill the page; the emptiness is the melancholy.',
+            'Do not use Japanese text that means something inappropriate — check it.'
+        ],
+        a11y: 'Text over a pastel gradient is the weak point. Keep all body copy inside translucent panels with enough opacity to guarantee contrast, and gate the glitch and floor animation under prefers-reduced-motion.',
+        check: [
+            'The display headline is letterspaced to full width.',
+            'No colour in the palette is fully saturated.',
+            'A chequered horizon and sun disc are present.',
+            'All body copy sits on a panel, not directly on the gradient.'
+        ]
+    },
+
+    watercolor: {
+        canvas: 'canvasW', theme: 'theme-watercolor', label: 'Concept W', series: 'Series I (A–Z)',
+        name: 'Painterly Fluidity',
+        tagline: 'Bleeding washes that darken where they cross, on paper that shows its tooth.',
+        bg: 'Warm paper #fdfbf7 with four large, blurred, multiplied colour washes — coral, apricot, mint, sky — drifting slowly, plus a fine grain.',
+        intent: 'Moving away from sharp vectors entirely: soft bleeding edges, translucent overlapping washes that darken where they cross, and the tooth of the paper showing through. The multiply blend is not optional — it is what makes it read as pigment rather than as a blurred div. Used by boutique commerce, wellness and artistic portfolios to signal a human hand.',
+        rules: [
+            'Washes use mix-blend-mode: multiply. Overlaps must visibly darken, or it is not watercolour.',
+            'Every wash is heavily blurred (60–120px) with irregular, asymmetric shape — never a clean circle.',
+            'A paper grain overlays the whole page at 4–6%.',
+            'Surfaces are translucent white (45–62%) so the washes read through them.'
+        ],
+        type: [
+            'A serif for display — the handmade counterpart to the washes — and a neutral sans for body.',
+            'Display at 400–500 weight, large, with generous leading. Nothing heavy.',
+            'Ink is a soft slate #2d3748 rather than black; secondary #a0aec0.',
+            'Wide-tracked small caps for eyebrows, in a muted blue-grey.'
+        ],
+        form: [
+            'Radius 12–16px — soft, but the panels are still panels.',
+            'No borders, or a 1px white-at-60% rim at most.',
+            'No hard shadows; a very soft warm shadow at most.',
+            'Wash shapes may have organic border-radius values and morph slowly.'
+        ],
+        motion: [
+            'Washes drift and scale on 20–40s loops, unsynchronised.',
+            'Hover raises panel opacity slightly, 400ms.',
+            'Nothing snaps.'
+        ],
+        layout: 'Airy and asymmetric, a single readable column with the washes placed so they pool behind and beside it rather than under the text.',
+        comp: [
+            'Panel — rgba(255,255,255,.62), 14px radius, no border, washes visible through it.',
+            'Wash — a large blurred multiplied shape, absolutely positioned, drifting.',
+            'Button — a soft coral fill with white label, fully round, no shadow.',
+            'Divider — a hand-drawn-looking irregular rule rather than a straight line.'
+        ],
+        dos: [
+            'Make at least one overlap clearly darker than its two parents.',
+            'Keep the paper warm rather than white.',
+            'Let washes bleed off the edges.'
+        ],
+        donts: [
+            'Do not use screen or normal blending — multiply is the mechanism.',
+            'Do not put dense text directly over a wash.',
+            'Do not use sharp geometry anywhere.'
+        ],
+        a11y: 'The washes move under the panels, so contrast varies. Keep panel opacity at 60% or above wherever body copy sits, and stop the drift under prefers-reduced-motion.',
+        check: [
+            'Wash overlaps are visibly darker than either wash alone.',
+            'Grain covers the page.',
+            'No wash is recognisable as a circle.',
+            'Body text sits on a panel at 60%+ opacity.'
+        ]
+    },
+
+    aero: {
+        canvas: 'canvasY', theme: 'theme-aero', label: 'Concept Y', series: 'Series I (A–Z)',
+        name: 'Frutiger Aero',
+        tagline: 'Mid-2000s consumer tech: gloss, sky, water and nature, relentlessly optimistic.',
+        bg: 'A vertical sky gradient from leaf green #dcedc1 through #56ccf2 to deep blue #2f80ed, with a broad white elliptical bloom across the upper third and translucent bubbles rising continuously from the bottom edge.',
+        intent: 'The aesthetic of Windows Vista, early iOS and every consumer electronics box between 2004 and 2010: glossy highlights, skeuomorphic glass, aurora skies, water droplets, and a hyper-optimistic blend of technology with nature. Enjoying a large resurgence because it is the last time computing looked cheerful. The three ingredients are the sky gradient, the gloss highlight, and the bubbles — all three, or it does not read.',
+        rules: [
+            'The sky gradient runs green at the top to blue at the bottom, or the reverse — nature above, technology below. It is the ground for everything.',
+            'Every surface is glossy: a white-to-transparent linear gradient across the top half of the element, at 35–50% opacity, hard-stopped at the midpoint.',
+            'Rising bubbles are mandatory — translucent circles with a bright specular dot at the upper-left, drifting upward on 10–22s loops at varied sizes.',
+            'Surfaces are white at 38–55% with a bright white 1px rim. The rim is what makes it look moulded rather than flat.'
+        ],
+        type: [
+            'A clean humanist sans — Frutiger itself, or Inter — at 600–800 for headings.',
+            'Headings are white with a soft dark drop shadow (0 2px 4px rgba(0,0,0,.35)) so they lift off the sky.',
+            'Body copy is deep teal #00352c on the glass panels, not white — white body text on this ground fails.',
+            'Eyebrows are small, bold, uppercase, wide-tracked, white with the same shadow.'
+        ],
+        form: [
+            'Radius 10–16px on panels and buttons. Nothing square, nothing fully round except the bubbles.',
+            'Border 1px rgba(255,255,255,.85) — bright, almost opaque, on every glass surface.',
+            'Soft blue-tinted shadow: 0 8px 24px rgba(0,40,80,.18). Never neutral grey.',
+            'The gloss overlay is a pseudo-element, not a background-image, so it scales with the panel.'
+        ],
+        motion: [
+            'Bubbles rise continuously with varied durations (10–22s), delays and sizes, drifting slightly sideways.',
+            'Buttons brighten their gloss on hover, 200ms.',
+            'The sky may shift very slowly; nothing else animates.'
+        ],
+        layout: 'Centred and generous, with content in a small number of large glass panels floating on the sky. Leave real sky visible at the top and around the panels — the background is half the design.',
+        comp: [
+            'Glass panel — rgba(255,255,255,.55), backdrop blur, 1px white/85 rim, 12px radius, gloss on the top half, blue-tinted shadow.',
+            'Button, primary — a blue #2f80ed to #56ccf2 vertical gradient, white label, gloss overlay, 10px radius, bright rim.',
+            'Bubble — a radial gradient from white/90 at the upper-left to white/6, with a 1px white rim, rising.',
+            'Nav — a glossy white-at-50% bar with a bright bottom rim.'
+        ],
+        dos: [
+            'Use all three ingredients — sky, gloss, bubbles. Two out of three reads as generic glass.',
+            'Keep the highlight hard-stopped at 50% rather than fading smoothly; that hard edge is the 2006 look.',
+            'Tint every shadow blue.'
+        ],
+        donts: [
+            'Do not use a flat or dark background.',
+            'Do not put white body text on the sky.',
+            'Do not use neutral grey anywhere — everything is tinted green, blue or teal.'
+        ],
+        a11y: 'The sky gradient spans a wide luminance range, so text placed directly on it will pass at the top and fail at the bottom. Put body copy on the glass panels in #00352c, keep white text to display sizes with a drop shadow, and give the rising bubbles a stop under prefers-reduced-motion.',
+        check: [
+            'A green-to-blue sky gradient covers the page.',
+            'Every panel has a hard-stopped gloss highlight on its top half.',
+            'Bubbles are rising, and they stop under reduced-motion.',
+            'No neutral grey appears in the palette.'
+        ]
+    },
+
+    zine: {
+        canvas: 'canvasZ', theme: 'theme-zine', label: 'Concept Z', series: 'Series I (A–Z)',
+        name: 'Anti-Design / Zine',
+        tagline: 'Photocopied, stapled, distributed by hand.',
+        bg: 'Dirty paper #f2f0eb with faint skewed photocopier lines and heavy grain. The page looks like a third-generation copy.',
+        intent: 'Intentional chaos: misaligned grids, raw photocopied textures, ransom-note typography and abrasive layouts. It breaks UX rules deliberately to force attention and convey unfiltered counter-culture energy. The discipline is in making it look genuinely careless — evenly-spaced chaos reads as a template.',
+        rules: [
+            'Ransom-note headings: every few characters in a different font, size, weight, rotation and background. Never uniform.',
+            'A heavy grain and photocopy artefact layer over the whole page at 10%+.',
+            'Elements are rotated 1–4 degrees and misaligned with each other on purpose.',
+            'Red #ff2d2d is the only colour, used as a marker or a stamp, over black on off-white.',
+            'Images are 1-bit, never greyscale. A third-generation copy has no midtones, so every photograph blows out to a coarse dot screen at roughly 5px pitch — crush the contrast first, then screen it.',
+            'If a second colour appears at all, it is one flat spot ink from a second pass on a second machine — a solid block of it, never a tint, never a gradient, and never more than one.'
+        ],
+        type: [
+            'Courier or a typewriter face for body — it reads as typed, then copied.',
+            'Headings mix at least three families across the same word.',
+            'Hand-written-looking annotations in the margins are in keeping.',
+            'Strikethrough and over-typed corrections are legitimate.'
+        ],
+        form: [
+            'Radius 0. Borders 2.5–8px solid black, sometimes on only two sides.',
+            'Hard shadows in red (10px 10px 0 #f00) rather than black.',
+            'Black bars redacting text, torn-edge effects, staple and tape marks.',
+            'Fills are pure black or paper; nothing in between except through the grain.',
+            'The halftone is a repeating radial-gradient at 5px pitch, multiply-blended over an image already pushed through contrast(2.4) grayscale(1). Finer than about 4px and it reads as a texture instead of as a copier.'
+        ],
+        motion: [
+            'Jitter on hover — a 1–2 degree rotation snap, no easing.',
+            'Otherwise still. A zine is paper.',
+            'Any animation should feel like a printing fault rather than a transition.'
+        ],
+        layout: 'Deliberately broken: overlapping blocks, text running off the edge, columns of unequal width that do not align to any grid. Content is arranged as a spread, not a scroll.',
+        comp: [
+            'Ransom heading — per-character spans with randomised font, size, rotation and inverted backgrounds.',
+            'Redaction bar — a solid black rectangle over text, slightly rotated.',
+            'Button — black fill, white typewriter label, red hard shadow, rotated 2°.',
+            'Margin note — small rotated text in red, overlapping the main column.',
+            'Halftone image — a hard black border around a crushed 1-bit picture with a 5px dot screen multiplied over it; no radius, no caption styling.',
+            'Spot block — a solid rectangle of the single second-pass ink carrying reversed uppercase type, rotated a degree or two off true.'
+        ],
+        dos: [
+            'Vary the rotation and misalignment; a consistent 2° tilt on everything looks like a filter.',
+            'Let something run off the edge of the page.',
+            'Keep the grain heavy enough to read as a copy of a copy.'
+        ],
+        donts: [
+            'Do not align anything to a grid.',
+            'Do not add a second colour beyond the red — or, if you are working in the spot-ink variant, beyond that one ink. Never both.',
+            'Do not use a clean modern typeface.',
+            'Do not ship a smooth greyscale image. A photograph that still has midtones has not been through the copier, and it is the single fastest way to give the style away.',
+            'Do not confuse this with Concept 41 (Swiss Punk). That style enlarges a halftone over a grid it is deliberately violating; this one has no grid to violate, and the screen is a printing artefact rather than a compositional device.'
+        ],
+        a11y: 'Ransom-note headings must carry an aria-label with the plain text, since the per-character spans destroy the accessible name — the specimen does exactly this. Keep body copy unrotated and on clean paper, and hold contrast at black on off-white.',
+        check: [
+            'Headings mix at least three faces within one word.',
+            'Every ransom heading has an aria-label with the plain string.',
+            'Grain and photocopy artefacts cover the page.',
+            'Nothing aligns to a grid.',
+            'No image on the page still has a midtone.',
+            'At most one colour appears beyond black and paper.'
+        ]
+    },
+
+    liquid: {
+        canvas: 'canvasLQ', theme: 'theme-liquid', label: 'Concept 27', series: 'Series II — Emerging',
+        name: 'Liquid Glass',
+        tagline: 'Glass with thickness: it bends what is behind it and tracks the light.',
+        bg: 'A deep diagonal gradient (#0b1220 → #172554 → #4c1d95) with large blurred colour orbs — pink, cyan, amber — so there is something worth refracting.',
+        intent: 'Apple’s 2025 system language (iOS 26, macOS Tahoe). Where Concept B is a flat frosted blur, liquid glass has thickness: it magnifies and bends the content behind its edges, carries a specular highlight that tracks the light source or the pointer, and pulls its tint from whatever it is floating over. The distinction from ordinary glassmorphism is refraction. If your panel does not distort what is behind it, you have built Concept B.',
+        rules: [
+            'Edge refraction is the defining property: content behind the panel is displaced and magnified near the rim and passes through cleanly at the centre.',
+            'A specular highlight tracks the pointer across the surface — a soft elliptical white gradient whose position is bound to the cursor.',
+            'The panel tint is sampled from the backdrop rather than fixed, so it changes as it moves over different colours.',
+            'The rim is a bright 1px white-at-55% line, brighter at the top edge, that reads as the thickness of the material.'
+        ],
+        type: [
+            'A neutral system sans (Inter, SF) at 600–700 for display, 400 for body.',
+            'White text at full opacity; secondary at 55%.',
+            'Tracking tight on display sizes; nothing decorative.',
+            'The type never sits over the refracting rim — keep it in the clear centre.'
+        ],
+        form: [
+            'Radius 12–24px, continuous curvature (a squircle) if you can manage it.',
+            'Surface rgba(255,255,255,.17), backdrop blur 20–30px plus a slight saturation boost.',
+            'Border 1px rgba(255,255,255,.55), with a brighter inset top highlight.',
+            'A soft ambient shadow beneath, tinted with the backdrop rather than neutral black.'
+        ],
+        motion: [
+            'The specular highlight follows the pointer with a slight lag — that lag is what makes it read as a physical surface.',
+            'Panels settle with a soft spring rather than a linear ease.',
+            'The backdrop orbs drift slowly, giving the refraction something to work on.'
+        ],
+        layout: 'Floating panels over a live backdrop, with real margin around each so the refraction at the edges is visible. Content is sparse; the material is the interest.',
+        comp: [
+            'Panel — 17% white, blur 24px, 1px white/55 rim, 16px radius, pointer-tracked specular, backdrop-tinted shadow.',
+            'Button — the same material at a smaller radius, with a stronger rim and a brighter specular.',
+            'Nav — a floating capsule rather than a full-width bar, refracting the content that scrolls beneath it.',
+            'Sheet — a large panel that adopts the tint of whatever it slides over.'
+        ],
+        dos: [
+            'Build the refraction, even approximately — an SVG displacement filter or a magnified backdrop copy at the rim both work.',
+            'Bind the specular to the pointer.',
+            'Let panels overlap so one refracts the other.'
+        ],
+        donts: [
+            'Do not settle for backdrop-filter: blur alone — that is Concept B and the difference is the whole point.',
+            'Do not use a fixed tint.',
+            'Do not place text near the rim where refraction distorts it.'
+        ],
+        a11y: 'Refraction plus a moving backdrop makes contrast genuinely unstable. Guarantee the floor with an inner scrim behind text, keep the specular subtle enough not to wash out labels, and fall back to a plain opaque surface under prefers-reduced-transparency.',
+        check: [
+            'Content behind a panel is visibly displaced near its edges.',
+            'The specular highlight moves with the pointer.',
+            'Panel tint changes as the backdrop behind it changes.',
+            'A non-transparent fallback exists.'
+        ]
+    },
+
+    spatial: {
+        canvas: 'canvasSP', theme: 'theme-spatial', label: 'Concept 28', series: 'Series II — Emerging',
+        name: 'Spatial / Depth UI',
+        tagline: 'Content on discrete planes in an unbounded dark canvas; depth carries the hierarchy.',
+        bg: 'Near-black #05070b with a soft radial glow at the top edge — an unbounded stage rather than a page.',
+        intent: 'Born with visionOS and spatial computing. Content sits on discrete planes floating at different depths, separated by parallax and shadow spread rather than by borders, dividers or colour. Depth is the hierarchy: the nearest plane is the most important, and that is the only signal needed. Layout stops being a grid and becomes a stage.',
+        rules: [
+            'Three or four discrete z-planes, not a continuum. Each plane has a defined depth, scale, brightness and shadow spread.',
+            'Nearer planes are brighter, larger and cast a wider, softer shadow onto the ones behind. Farther planes dim and desaturate.',
+            'Parallax on pointer movement: the whole stage rotates a few degrees, planes displacing proportionally to their depth.',
+            'No borders, no dividers, no background colour changes. If you need a line to separate two things, you have not used depth.'
+        ],
+        type: [
+            'A neutral system sans at 400–600; type is never the feature here.',
+            'Text on nearer planes is brighter (#e8edf7); on receded planes it drops to #5a6b85.',
+            'Sizes scale with plane depth — the same 16px text is physically smaller on a farther plane.',
+            'Nothing uppercase or tracked; the style is quiet.'
+        ],
+        form: [
+            'Radius 12–22px, continuous curvature.',
+            'Surfaces rgba(255,255,255,.05–.10), 1px rgba(255,255,255,.15) rim.',
+            'Shadows are large and very soft: 0 20px 60px rgba(0,0,0,.85) on the nearest plane, halving with each plane back.',
+            'No fills brighter than 10% white, ever.'
+        ],
+        motion: [
+            'The stage rotates with the pointer (perspective ~1200px, rotation under 8 degrees), with easing so it settles rather than tracks exactly.',
+            'Planes move forward on focus rather than changing colour.',
+            'Transitions are 300–500ms with a soft spring.'
+        ],
+        layout: 'A perspective container holding stacked planes offset in x, y and z. Content is sparse per plane — one idea each — with real space between planes so the shadows are readable.',
+        comp: [
+            'Plane — a translucent panel with a depth label, its own transform: translateZ(), scale and shadow.',
+            'Focus plane — the nearest, brightest, largest-shadow surface holding the primary content.',
+            'Ambient plane — farthest back, dimmed and slightly desaturated, holding context.',
+            'Control — moves toward the viewer on hover rather than changing fill.'
+        ],
+        dos: [
+            'Give each plane an explicit z value and derive its brightness and shadow from it.',
+            'Let planes overlap so the shadow relationship is visible.',
+            'Keep the canvas unbounded — no visible page edges.'
+        ],
+        donts: [
+            'Do not use borders or dividers to separate planes.',
+            'Do not use colour to encode hierarchy.',
+            'Do not exceed four planes; beyond that depth stops being readable.'
+        ],
+        a11y: 'Parallax tied to pointer or device motion is a vestibular trigger — disable it entirely under prefers-reduced-motion and keep the static layout fully legible. Because hierarchy is depth, every plane also needs a semantic heading level so the structure survives without vision.',
+        check: [
+            'There are three or four discrete planes with explicit z values.',
+            'Brightness and shadow spread both scale with depth.',
+            'No borders or dividers separate content.',
+            'Parallax is off under reduced-motion.'
+        ]
+    },
+
+    ainative: {
+        canvas: 'canvasAN', theme: 'theme-ai', label: 'Concept 29', series: 'Series II — Emerging',
+        name: 'AI-Native Interface',
+        tagline: 'Not a look — an interaction grammar: prompt, stream, tool calls, citations.',
+        bg: 'Flat #0d1117 near-black with #161c26 surfaces. Deliberately plain — the behaviour is the design.',
+        intent: 'This is not a visual style, it is a set of interaction patterns, and it should be applied on top of whatever visual language the product already has. Where Baseline X describes what AI-assisted code tends to look like, this describes what AI-driven products behave like: a prompt instead of a form, answers that stream in token by token, visible tool calls, inline citations, and skeleton states standing in for content that does not exist yet.',
+        rules: [
+            'The primary input is a prompt, not a form. One text field, full width, pill-shaped, with the submit affordance inside it.',
+            'Latency is designed for rather than hidden: content streams in token by token. Streaming replaces spinners everywhere.',
+            'The model’s work is shown, not buried — tool calls appear as they run, with their arguments and result counts; sources appear as inline citations.',
+            'Output is non-deterministic, so every generated surface needs a correction path: regenerate, edit, and a way to report that it was wrong.'
+        ],
+        type: [
+            'A neutral system sans for prose; a monospace for tool calls, arguments and any structured output.',
+            'Streaming text is normal body copy at 15–16px/1.6 — do not style it as terminal output.',
+            'Tool-call lines are 12–13px mono, dimmed, with a caret or arrow prefix.',
+            'Citations are superscript or small bracketed indices, linked to the source.'
+        ],
+        form: [
+            'The prompt bar is fully round (999px) with a 1px #2b3442 border; everything else is 8–12px radius.',
+            'Surfaces are two flat steps of near-black; no gradients, no glass.',
+            'Accent violet #7c3aed for the send action and active tool state.',
+            'Skeletons are 4–6px rounded bars at #2f3b4f, in lines of unequal length so they look like text.'
+        ],
+        motion: [
+            'Token streaming at a natural rate with a trailing caret; never reveal the whole response at once.',
+            'Tool calls animate in as they start and collapse to a one-line summary when they finish.',
+            'Skeletons shimmer subtly; they do not spin.'
+        ],
+        layout: 'A conversation column at a comfortable reading measure with the prompt bar pinned to the bottom. Suggested follow-up actions sit as chips directly under the last response.',
+        comp: [
+            'Prompt bar — full-width pill, placeholder text, mono-free, violet circular send button inside the right edge.',
+            'Tool call — a dimmed mono line: a caret, the function name, its arguments, and an arrow to the result count.',
+            'Streaming response — body text appearing progressively with a blinking caret at the end.',
+            'Suggestion chips — three short outlined pills offering the likely next questions.',
+            'Citation — an inline bracketed index linking to a source list under the response.'
+        ],
+        dos: [
+            'Show the tool calls even when they are boring — visible work is what builds trust.',
+            'Offer follow-ups; a blank prompt is a hard start for most users.',
+            'Make the correction path as prominent as the copy button.'
+        ],
+        donts: [
+            'Do not use a spinner. If you are waiting, stream something.',
+            'Do not present generated content as authoritative without a source or a correction path.',
+            'Do not hide which model or tool produced a result.'
+        ],
+        a11y: 'Streaming text must be announced sensibly — use aria-live="polite" on the response container and update it in coherent chunks rather than per token, or screen readers will read a stutter. Skeletons need aria-busy on their container, and the prompt bar needs a real label even when the placeholder looks like one.',
+        check: [
+            'No spinner appears anywhere.',
+            'Tool calls are visible with their arguments.',
+            'Every response has a correction path.',
+            'The response container is a polite live region updated in chunks.'
+        ]
+    },
+
+    kinetic: {
+        canvas: 'canvasKT', theme: 'theme-kinetic', label: 'Concept 30', series: 'Series II — Emerging',
+        name: 'Kinetic Typography',
+        tagline: 'The layout holds still; the letterforms move.',
+        bg: 'Flat #0b0b0b with #fafafa type. There is nothing else on the page but words.',
+        intent: 'Variable fonts collapsed the weight axis into a single continuously animatable value, and scroll-driven animation made type the primary motion object rather than a caption on someone else’s. The rule that makes it work: the layout does not move, the letterforms do. Weight, width and optical size respond to scroll position, pointer proximity or time, while every box stays exactly where it was.',
+        rules: [
+            'Animate font-variation-settings — wght, wdth, opsz — not position, scale or opacity.',
+            'Nothing else on the page moves. If a box translates, the effect is lost in the noise.',
+            'The type is the content: one headline at viewport scale, and very little else.',
+            'The palette is monochrome. Colour would compete with the only variable that matters.'
+        ],
+        type: [
+            'A variable font with a genuine weight axis (Inter Variable and similar), 100 to 900.',
+            'Display type at 12–20vw — large enough that a weight change is unmistakable.',
+            'One family for the entire page. Two would make the axis unreadable.',
+            'Body copy is small, static, and light — it exists to explain the headline.'
+        ],
+        form: [
+            'Radius 0. No borders, no shadows, no fills.',
+            'Full-bleed bands of type running edge to edge, often clipped by the viewport.',
+            'A single 1px rule at #2a2a2a is the only non-type element permitted.',
+            'Marquee strips showing the weight ramp (THIN LIGHT REGULAR MEDIUM BOLD BLACK) are in keeping.'
+        ],
+        motion: [
+            'Weight bound to scroll position: as the headline enters the viewport it runs from 100 to 900.',
+            'Or weight bound to pointer proximity: letters thicken as the cursor nears them.',
+            'Transitions on font-variation-settings are 200–400ms so the change reads as a morph rather than a jump.'
+        ],
+        layout: 'Full-bleed horizontal bands, each holding one line of type at display scale. No cards, no columns, no container max-width.',
+        comp: [
+            'Kinetic headline — a single line whose wght is driven by scroll or pointer.',
+            'Weight ramp — the same word repeated at 100, 300, 400, 500, 700, 900 as a specimen strip.',
+            'Marquee — an edge-to-edge scrolling band of type at a fixed weight.',
+            'Axis label — small mono text stating the axis and range, e.g. wght 100 → 900.'
+        ],
+        dos: [
+            'Pick one axis and drive it hard.',
+            'Keep the boxes absolutely still.',
+            'Show the axis range somewhere so the mechanism is legible.'
+        ],
+        donts: [
+            'Do not fake it with a static weight swap; the continuity is the effect.',
+            'Do not add colour, imagery or decoration.',
+            'Do not animate anything that is not a font axis.'
+        ],
+        a11y: 'Weight animation is not a vestibular trigger, but it must still freeze at a legible mid-weight under prefers-reduced-motion. Never let the animated weight drop below 300 at body sizes, and provide a static fallback where the variable font fails to load.',
+        check: [
+            'Only font-variation-settings animate.',
+            'The layout does not move at all.',
+            'The palette is monochrome.',
+            'A static legible weight is used under reduced-motion and as a font-load fallback.'
+        ]
+    },
+
+    skeuotrue: {
+        canvas: 'canvasSK', theme: 'theme-skeuo-true', label: 'Concept 31', series: 'Series II — Classic',
+        name: 'True Skeuomorphism',
+        tagline: 'Real materials: brushed aluminium, stitched leather, felt, backlit LCD.',
+        bg: 'A brushed aluminium chassis — a vertical #dcdfe3 → #9ba1a9 gradient with fine 1px vertical striations. Panels are stitched leather #5b3a24 inset into it.',
+        intent: 'Worth separating from Concept D. That is Neumorphism, which extrudes a single flat colour. Real skeuomorphism imitates specific materials — brushed metal, saddle-stitched leather, green felt, backlit LCD — so the interface teaches its own affordances by resembling objects the user has already held. Every surface should be nameable as a material.',
+        rules: [
+            'Every surface is a specific material, and you should be able to name it. Generic gradients are not skeuomorphism.',
+            'Materials are layered as they would be built: a metal chassis, a leather panel inset into it, controls mounted on top.',
+            'Light is consistent and from above: highlight along the top edge, shadow along the bottom, inner shadow where a panel is recessed.',
+            'Details do the work — stitching, screw heads, striations, bevels, the glass of an LCD. Skipping them leaves a brown box.'
+        ],
+        type: [
+            'A humanist sans for interface labels; a monospace for anything on an LCD readout.',
+            'Labels are engraved: a 1px dark text-shadow above and a 1px light one below, or the reverse for embossed.',
+            'Cream #f4e9db on leather; near-black on metal; phosphor green or amber on LCD.',
+            'Small caps for control labels, as on real hardware.'
+        ],
+        form: [
+            'Radius 4–8px — real objects have small radii, not large ones.',
+            'Leather: a mid-brown fill, a subtle noise texture, a dashed cream stitch line inset 6px from the edge.',
+            'Metal: a vertical gradient with 1–2px striations and a bright top edge.',
+            'LCD: a dark green-black fill with an inner shadow and a mono readout that glows slightly.'
+        ],
+        motion: [
+            'Buttons depress: translateY(1px), the top highlight dims, the shadow tightens. 80ms.',
+            'Toggles physically slide; switches flip.',
+            'Nothing fades — objects move.'
+        ],
+        layout: 'Panel-based, like the face of a device: a chassis containing inset panels containing controls, with visible margins that read as bezels.',
+        comp: [
+            'Chassis — the brushed metal ground, holding everything else.',
+            'Leather panel — inset into the chassis with an inner shadow at its top edge and a stitched border.',
+            'Button — a bevelled cap with a gradient, a bright top edge and a dark bottom edge, engraved label.',
+            'LCD readout — recessed dark panel with monospaced glowing text.'
+        ],
+        dos: [
+            'Commit to specific, nameable materials.',
+            'Add the small details — stitching and striations are what sell it.',
+            'Keep the light source constant across every surface.'
+        ],
+        donts: [
+            'Do not use a flat brown fill and call it leather.',
+            'Do not mix in flat-design elements; the metaphor collapses.',
+            'Do not confuse it with Neumorphism (Concept D) — that is one colour, no materials.'
+        ],
+        a11y: 'Textured backgrounds hurt text contrast, so keep labels on the flattest region of each material and give engraved text enough tonal difference to survive without its shadow. Controls that look like hardware still need real focus rings, which physical metaphors tend to omit.',
+        check: [
+            'Every surface is a nameable material.',
+            'Materials are layered in a physically plausible order.',
+            'One light direction governs every highlight and shadow.',
+            'Buttons visibly depress on press.'
+        ]
+    },
+
+    bauhaus: {
+        canvas: 'canvasBH', theme: 'theme-bauhaus', label: 'Concept 32', series: 'Series II — Classic',
+        name: 'Bauhaus',
+        tagline: 'Primary triad, three primitives, form following function.',
+        bg: 'Warm paper #f2efe6 — slightly off-white, as printed stock rather than screen white.',
+        intent: 'The 1919 school that produced the grammar everything after it borrowed. Form follows function; ornament is reduced to the primary triad — red, blue, yellow — and the three primitives: circle, square, triangle. Concept H (Swiss) is its direct descendant, but Bauhaus is the warmer ancestor: it keeps saturated colour and playful geometry where Swiss went monochrome and strictly typographic.',
+        rules: [
+            'Only circles, squares and triangles as decorative form. No other shape is permitted.',
+            'The palette is the triad plus black on warm paper: red #e63946, blue #1d3557, yellow/ochre #f4a261.',
+            'Shapes are large, flat, unmodulated, and placed to balance the composition asymmetrically.',
+            'Geometry serves the layout — a circle marks, a bar divides, a triangle points. Nothing is there just to fill.'
+        ],
+        type: [
+            'A geometric sans (Futura, Unbounded) in heavy weight, uppercase, tracking-tighter.',
+            'Type may be set vertically or rotated 90 degrees along a column edge — a period move.',
+            'Body copy in the same family at regular weight, 15–16px.',
+            'Section numbers set large, in a triad colour, as compositional elements.'
+        ],
+        form: [
+            'Radius 0 on rectangles; circles are true circles; triangles are equilateral.',
+            'Border 2px #111 where a border is needed at all.',
+            'Flat fills only — no gradient, no shadow, no texture.',
+            'A quarter-circle bleeding off a page corner is the single most characteristic move.'
+        ],
+        motion: [
+            'Shapes may rotate slowly on their own centres.',
+            'Hover swaps a fill between two triad colours instantly.',
+            'No easing flourishes, no fades.'
+        ],
+        layout: 'Asymmetric balance on a strict grid: a heavy block of colour on one side answered by empty space and a small mark on the other. Diagonals are used deliberately and sparingly.',
+        comp: [
+            'Shape mark — a large circle, square or triangle in a triad colour, positioned for balance and bleeding off an edge.',
+            'Button — flat triad fill, square, uppercase heavy label, no radius.',
+            'Card — white on paper with a 2px black border and one triad-coloured corner element.',
+            'Rule — a thick black bar dividing sections, aligned to the grid.'
+        ],
+        dos: [
+            'Let one shape be very large and bleed off the page.',
+            'Balance asymmetrically — weight against space.',
+            'Keep the triad pure and unmixed.'
+        ],
+        donts: [
+            'Do not introduce a fourth hue or a tint.',
+            'Do not use a shape that is not one of the three primitives.',
+            'Do not add shadow or gradient.'
+        ],
+        a11y: 'The triad on warm paper is high-contrast for black text but not for coloured text on coloured shapes — keep type black or paper-white. Decorative shapes should be aria-hidden.',
+        check: [
+            'Only circles, squares and triangles appear.',
+            'The palette is exactly the triad plus black on warm paper.',
+            'At least one shape bleeds off an edge.',
+            'No gradients or shadows exist.'
+        ]
+    },
+
+    deco: {
+        canvas: 'canvasDC', theme: 'theme-deco', label: 'Concept 33', series: 'Series II — Classic',
+        name: 'Art Deco',
+        tagline: 'Gold on deep lacquer: symmetry, stepped forms, sunbursts, chevrons.',
+        bg: 'Deep lacquer green #0d1f1a with a faint gold sunburst radiating from the bottom centre at under 10% opacity.',
+        intent: 'The luxury language of 1925: strict bilateral symmetry, stepped and faceted forms, sunburst and chevron motifs, and gold on deep lacquer. It reads as expensive because every line is deliberate and nothing is accidental. Still the default for spirits, hotels, jewellery and title sequences — any brand that needs to signal craft and permanence rather than speed.',
+        rules: [
+            'Bilateral symmetry is mandatory. The composition mirrors about a vertical centre line, without exception.',
+            'Gold #c9a227 and warm cream #e8d9a8 on a deep lacquer ground. No third hue.',
+            'Every major region gets a stepped or bracketed corner detail — the corners are where Deco lives.',
+            'One geometric motif — sunburst, chevron, or stepped ziggurat — repeats throughout at different scales.'
+        ],
+        type: [
+            'A high-contrast display serif with strong verticals — Cinzel, or any inscriptional face.',
+            'Uppercase throughout, tracked wide (0.15–0.4em). Deco type is always spaced.',
+            'Headings are centred, gold, often with a hairline rule above and below.',
+            'Body copy in cream at 15–16px, still slightly tracked.'
+        ],
+        form: [
+            'Radius 0. Borders 1px gold, doubled with a 3px gap for the important frames.',
+            'Corner brackets: two 14px gold strokes meeting at each corner, not a full border.',
+            'Fills are flat lacquer greens; gold appears only as line, type and small solid marks.',
+            'Stepped forms — a shape narrowing in three discrete steps — for headers and dividers.'
+        ],
+        motion: [
+            'Minimal and stately. Fades of 400–600ms.',
+            'Gold may shimmer along a gradient on hover.',
+            'Nothing bounces, nothing snaps.'
+        ],
+        layout: 'Centred and symmetric, with a strong vertical axis. Content in a narrow column framed by gold rules, with generous margins that read as a mount.',
+        comp: [
+            'Frame — a doubled gold rule with stepped corners around a content block.',
+            'Button — a gold 1px outline, uppercase tracked cream label, square; fills gold with dark label on hover.',
+            'Divider — a centred motif flanked by two hairline rules running to the margins.',
+            'Header — a stepped ziggurat form in gold above a centred title.'
+        ],
+        dos: [
+            'Mirror everything about the centre line.',
+            'Use the corner brackets rather than full borders.',
+            'Track the type wider than feels comfortable.'
+        ],
+        donts: [
+            'Do not break symmetry.',
+            'Do not use a colour outside gold, cream and lacquer.',
+            'Do not round a corner or add a soft shadow.'
+        ],
+        a11y: 'Gold #c9a227 on the lacquer ground is around 5:1 and passes for body text, but the dim gold #8c6d1f used for secondary text does not — keep it to decoration. Heavy tracking hurts reading speed, so hold body tracking under 0.05em even though display type is spaced far wider.',
+        check: [
+            'The composition is bilaterally symmetric.',
+            'Corner brackets appear on every major frame.',
+            'One motif repeats at three or more scales.',
+            'Only gold, cream and lacquer appear.'
+        ]
+    },
+
+    a11y: {
+        canvas: 'canvasAC', theme: 'theme-a11y', label: 'Concept 34', series: 'Series II — Practical',
+        name: 'Accessibility-First',
+        tagline: 'Contrast, target size, focus and semantics chosen before the aesthetic.',
+        bg: 'Pure #ffffff with #111827 ink — a measured 17.7:1. The aesthetic is built inside what the contrast requirements leave.',
+        intent: 'This inverts the usual order of operations. Contrast, target size, focus visibility and semantics are decided first, and the aesthetic is built inside what is left. It is not a look so much as a constraint set — but the constraint set produces a recognisable result: high contrast, large targets, visible focus, and every state stated in words as well as colour.',
+        rules: [
+            'Every colour pair is measured, not assumed. Body text at 4.5:1 minimum, large text and non-text indicators at 3:1, and record the ratios.',
+            'Focus is always visible: a 3px ring in a colour that clears 3:1 against both the control and the page. Never outline: none.',
+            'Every interactive target is at least 48×48px including padding.',
+            'No meaning is carried by colour alone. Status has a word, an icon or a pattern alongside the colour.'
+        ],
+        type: [
+            'A neutral sans with clearly distinct letterforms — avoid faces where I, l and 1 collapse.',
+            'Body at 16px minimum, 1.5 leading, and the layout must survive a 200% text zoom without horizontal scroll.',
+            'Headings follow a real semantic order; never skip a level to get a size.',
+            'Line length capped around 80 characters.'
+        ],
+        form: [
+            'Radius 4–8px. Borders 2–2.5px #111827 — heavy enough to define edges without relying on colour.',
+            'Primary #1e40af (8.7:1 with white), positive #166534. Amber #f59e0b is decorative only — it measures 2.0:1 on white and fails.',
+            'No transparency over content, no low-contrast placeholder text, no grey-on-grey disabled states without a text cue.',
+            'Icons always ship with a text label or an accessible name.'
+        ],
+        motion: [
+            'All non-essential animation stops under prefers-reduced-motion.',
+            'No parallax, no auto-advancing carousels, no motion that conveys meaning.',
+            'Transitions under 200ms so they never delay a response.'
+        ],
+        layout: 'A single logical reading order that matches the DOM order. Generous spacing so 48px targets do not crowd. Skip links, landmark regions and a visible page heading.',
+        comp: [
+            'Button — #1e40af fill, white label, 48px min height, 2px border, 3px near-black focus ring at 2px offset.',
+            'Link — underlined always, not just on hover; colour is a secondary cue.',
+            'Status — a coloured indicator plus the word plus an icon shape.',
+            'Input — a persistent visible label above the field, 2px border, error text tied via aria-describedby.'
+        ],
+        dos: [
+            'Publish the contrast ratios you measured; if a pair fails, change it rather than excusing it.',
+            'Test with the keyboard only, then with a screen reader.',
+            'Choose the near-black focus ring over the on-brand one when the brand colour cannot clear 3:1.'
+        ],
+        donts: [
+            'Do not remove focus outlines.',
+            'Do not use placeholder text as the only label.',
+            'Do not use amber, light greens or mid greys for anything that must be read.'
+        ],
+        a11y: 'The whole brief is the accessibility brief. The specific trap worth naming: conventional amber focus rings measure about 2.0:1 on white and fail the 3:1 minimum for non-text indicators, which is why the ring here is near-black. Check yours rather than inheriting it.',
+        check: [
+            'Every colour pair used for text or indicators has a recorded ratio that passes.',
+            'Tab reaches every control, in order, with a visible ring at each stop.',
+            'Every target measures 48px or more.',
+            'The page works at 200% text zoom with no horizontal scroll.',
+            'No status is communicated by colour alone.'
+        ]
+    },
+
+    editorial: {
+        canvas: 'canvasED', theme: 'theme-editorial', label: 'Concept 35', series: 'Series II — Practical',
+        name: 'Editorial & Long-Form',
+        tagline: 'The measure is the design; everything else is arrangement.',
+        bg: 'Warm paper #fbfaf7 with #1f2328 ink. No surfaces, no cards, no chrome — the page is the page.',
+        intent: 'Reading is the one task where the interface should disappear entirely, and the rules for it were settled centuries before the browser. A measure of roughly sixty-five characters, leading near 1.75, a serif sized for sustained reading, and generous space between paragraphs will outperform any amount of visual invention. What makes this a design concept rather than a default is the discipline it demands: every element that is not the text competes with the only thing the reader came for.',
+        rules: [
+            'Set the measure with max-width: 65ch on the container, not a pixel width — so it holds at whatever font size the reader chooses.',
+            'Leading 1.7–1.8 on body copy, and paragraph spacing rather than indentation on the web.',
+            'A serif at 19–21px for body. Smaller than 18px is a failure of nerve.',
+            'Delete anything that is not the text: no sidebar, no related links, no sticky bar, no newsletter modal, no share rail.'
+        ],
+        type: [
+            'A text serif for body — Lora, Charter, Georgia — and a display serif for the title.',
+            'A drop cap on the opening paragraph only, three lines deep, and nowhere else.',
+            'Subheads in the sans at small size and wide tracking, so they read as signposts rather than as competing titles.',
+            'Pull quotes set larger, in the display serif, with generous space above and below rather than a border.'
+        ],
+        form: [
+            'Radius 0–2px. There is almost nothing to round.',
+            'The only rules are hairlines at #ddd8cd, used to close a section rather than to box anything.',
+            'No shadows, no cards, no fills. Images run to the measure or full-bleed, nothing between.',
+            'Accent #8a6d3b, used on links and the drop cap only.'
+        ],
+        motion: [
+            'None. Reading is interrupted by movement.',
+            'A reading-progress indicator is acceptable if it is a hairline and nothing more.',
+            'No scroll-triggered reveals — text that fades in as you reach it is text you cannot skim.'
+        ],
+        layout: 'One column, centred, at 65ch, with 1.5–2 line-heights of space between paragraphs and 3–4 between sections. Figures may exceed the measure; text never does.',
+        comp: [
+            'Article body — 65ch, serif, 1.75 leading, no indentation, spaced paragraphs.',
+            'Lead paragraph — slightly larger, with a three-line drop cap.',
+            'Pull quote — display serif, larger, spaced rather than bordered.',
+            'Figure — image plus a small sans caption at the measure or full-bleed.',
+            'Section break — whitespace, or a centred asterism, never a heavy rule.'
+        ],
+        dos: [
+            'Set the measure in ch so it survives zoom.',
+            'Give the reader a table of contents rather than a sidebar.',
+            'Use space to structure; reach for a rule only when space genuinely cannot.'
+        ],
+        donts: [
+            'Do not set body text below 18px.',
+            'Do not justify, and do not hyphenate aggressively.',
+            'Do not add anything that moves, floats or follows the scroll.'
+        ],
+        a11y: 'This style is close to optimal for accessibility already. Protect it: keep the measure in ch, do not cap the line-height, ensure the drop cap is not read as a separate character by screen readers, and make sure any progress indicator is decorative and aria-hidden.',
+        check: [
+            'The measure is set in ch and holds at 200% zoom.',
+            'Body text is 18px or larger with leading at or above 1.7.',
+            'There is no sidebar, sticky bar, modal or share rail.',
+            'Nothing on the page moves.'
+        ]
+    },
+
+    designsystem: {
+        canvas: 'canvasDS', theme: 'theme-ds', label: 'Concept 36', series: 'Series II — Practical',
+        name: 'Token-Driven Design System',
+        tagline: 'Nothing is chosen per screen. The aesthetic is a by-product of the constraints.',
+        bg: 'Flat #f8fafc with #ffffff surfaces — whatever the tokens resolve to. The neutrality is the point.',
+        intent: 'The style most shipped software actually uses, and the only one here that is not really a look at all. Colour, spacing and radius resolve from named tokens; every component documents its full state matrix; nothing is decided at the screen level. The visual result is a by-product of the constraints, which is why token-driven systems from different companies look so similar. Choose this when many people will build many screens over a long time.',
+        rules: [
+            'Every value in every component comes from a token. A hard-coded hex, pixel or radius anywhere is the bug.',
+            'Tokens are semantic, not literal: --color-action, not --indigo-600. Components reference the role; the role points at the ramp.',
+            'The spacing scale has a 4px base and no arbitrary values. If you need 13px, the design is wrong, not the scale.',
+            'A component is not done until default, hover, focus, disabled and error are all specified.'
+        ],
+        type: [
+            'One UI sans referenced as --font-ui, at a fixed type scale with named steps.',
+            'A monospace as --font-mono for tokens, code and any documented value.',
+            'Sizes come from the scale only — text-sm, text-base, text-lg — never from a raw value.',
+            'Line-height is part of the type token, not chosen separately.'
+        ],
+        form: [
+            'Radius tokens: --radius-sm 4px, --radius-md 8px, --radius-lg 12px, --radius-full 999px.',
+            'Spacing: --space-1 4px through --space-10 40px, on a 4px base.',
+            'Colour ramps of five steps (100, 300, 400, 600, 900) per hue, referenced only through semantic aliases.',
+            'Borders --border-subtle #e2e8f0; elevation as two or three named shadow tokens, not ad-hoc.'
+        ],
+        motion: [
+            'Duration and easing are tokens too: --duration-fast 120ms, --duration-base 200ms, --ease-standard.',
+            'Every component uses the same durations, so the whole product feels like one thing.',
+            'No bespoke animation without a new token to justify it.'
+        ],
+        layout: 'A grid whose gutters and margins come from the spacing scale. Layout primitives (Stack, Inline, Grid) take token values only, so no screen can invent its own rhythm.',
+        comp: [
+            'Button — background var(--color-action), radius var(--radius-md), padding var(--space-2) var(--space-4); all five states defined.',
+            'Input — border var(--border-subtle), focus ring var(--color-action), error state with its own token pair.',
+            'Card — surface token, radius-md, --shadow-sm, padding var(--space-6).',
+            'Token documentation — the ramp, the scale and the state matrix rendered on the page itself.'
+        ],
+        dos: [
+            'Name tokens for their role and let the role point at the ramp.',
+            'Document the state matrix next to the component.',
+            'Make an arbitrary value fail review.'
+        ],
+        donts: [
+            'Do not hard-code a value “just this once”.',
+            'Do not name a token after its colour.',
+            'Do not ship a component with only its default state designed.'
+        ],
+        a11y: 'Tokens make accessibility enforceable: define the contrast-safe foreground for each background as a paired token (--color-surface / --color-on-surface) so a passing combination is the only one reachable. Focus ring is a token too, used identically everywhere.',
+        check: [
+            'A search for raw hex values in component code returns nothing.',
+            'Every token name describes a role rather than a value.',
+            'Every spacing value is a multiple of 4 and comes from the scale.',
+            'Every component documents all five states.'
+        ]
+    },
+
+    nouveau: {
+        canvas: 'canvasNV', theme: 'theme-nouveau', label: 'Concept 37', series: 'Series II — Movements',
+        name: 'Jugendstil / Art Nouveau',
+        tagline: 'Ornament is not applied to the layout. Ornament is the layout.',
+        bg: 'Cream #f7f1e3 with #fdfaf2 panels. Never white — the ground is aged paper, and the gold only reads as gold against it.',
+        intent: 'The 1890s answer to industrial ugliness: organic line, hand-drawn ornament, and forms borrowed from stems and hair rather than from machines. What makes it different from every other decorative style here is that the ornament is structural. The arch defines the panel, the whiplash line carries the eye from block to block, and the hairline frame does the job a border-radius does elsewhere. Strip the ornament out and there is no composition underneath it — which is exactly the test for whether you have built this style or merely decorated something else with it. Choose it for anything trading on craft, patience and the handmade; reject it for anything that must look fast.',
+        rules: [
+            'Every curve is a real arc with a changing radius — the whiplash line. Constant-radius curves and symmetric arcs read as Art Deco (Concept 33), not Nouveau.',
+            'The frame is a hairline, 1px, and doubled with a second inset rule. Weight is never used to signal importance; position and enclosure are.',
+            'The arch is the primary container. A panel that must carry a portrait, a headline or a product gets a full half-round top.',
+            'Gold is structure only — frames, rules, ornament, small caps. It never carries body text, because at hairline weight on cream it cannot.',
+            'Nothing is symmetric about the vertical axis except the arch itself. The ornament around it is always weighted to one side.'
+        ],
+        type: [
+            'A high-contrast serif for display — Cinzel here; anything with a strong thick/thin axis and generous ascenders works.',
+            'A softer old-style serif for reading — Lora at 17–18px, 1.75 leading. The measure stays under 68 characters.',
+            'Eyebrows and labels are small caps or uppercase at 0.32em tracking, in gold, 11–12px.',
+            'One drop cap per major block, three lines deep, in gold. More than one per screen reads as a pastiche.'
+        ],
+        form: [
+            'Radius: 0 on rectangles, 999px on the two top corners of an arch. There is no middle setting.',
+            'Borders 1px #a9884f, with an inner 1px #d8c49a at 2px offset — the doubled rule is the whole frame language.',
+            'No shadow of any kind. Depth comes from the layered rule, not from light.',
+            'Ornament is drawn from borders and radii — lozenges are rotated squares, curves are quarter-ellipses. Do not reach for imagery.'
+        ],
+        motion: [
+            'Transitions are slow for this page — 300ms ease — because the style is arguing for patience.',
+            'Hover fills an outlined control with gold and inverts its label. Nothing moves position.',
+            'No parallax, no float, no reveal-on-scroll beyond a plain fade. Movement fights the drawn line.'
+        ],
+        layout: 'A centred column at max-width 72rem with wide 56–72px gutters, and generous 112px vertical rhythm. Two columns at most: an ornament panel and a reading column. Three-column grids are wrong for this style — they leave no room for the frame.',
+        comp: [
+            'Button — transparent fill, 1px gold border, uppercase serif at 0.22em tracking, 0.7rem/1.6rem padding; fills gold on hover.',
+            'Card — #fdfaf2 inside the doubled gold frame, 20px padding, zero radius.',
+            'Panel, feature — the arch: 999px 999px 4px 4px, with a vertical gradient from #fdfaf2 to #f2e9d5.',
+            'Divider — a 1px rule fading to transparent at both ends, with a rotated gold lozenge centred on it.',
+            'Nav — no bar and no fill. Wordmark centred, links spread wide at 0.3em tracking, one hairline rule beneath.'
+        ],
+        dos: [
+            'Let the ornament do structural work, so removing it would break the page.',
+            'Keep the palette tertiary — ivory, ochre, sage, faded rose. Contrast comes from line, not hue.',
+            'Give it space. This style suffocates in a dense layout.'
+        ],
+        donts: [
+            'Do not mix in symmetric sunburst or chevron motifs — that is Concept 33 and the two cancel out.',
+            'Do not set body text in gold, and do not set display type in a script face; the serif is doing the ornamenting already.',
+            'Do not add shadow or gradient depth. A drawn line and a simulated light source cannot share a page.'
+        ],
+        a11y: 'The gold #a9884f on cream #f7f1e3 sits near 3:1 — acceptable for large display type and for non-text structure, and a failure for body copy. Set all reading text in #3b3227, which clears 9:1. The doubled hairline frame is decorative, so give interactive elements a focus ring at full ink weight rather than relying on the gold.',
+        check: [
+            'Deleting the ornament layer leaves no usable composition behind.',
+            'Every curve on the page has a changing radius.',
+            'No element casts a shadow.',
+            'All body text is ink, never gold.'
+        ]
+    },
+
+    konstrukt: {
+        canvas: 'canvasKN', theme: 'theme-konstrukt', label: 'Concept 38', series: 'Series II — Movements',
+        name: 'Soviet Constructivism',
+        tagline: 'Form follows force: the diagonal is the argument.',
+        bg: 'Newsprint #efeae1. Not white, not cream — a paper that looks like it was printed on cheaply and on purpose.',
+        intent: 'The 1920s Soviet poster refused the orthogonal because the orthogonal was the visual language of the order it was arguing against. Type runs on the diagonal, black wedges cut across the frame, red rules run off both edges, and the palette is exactly three values: red, black and the paper. Everything is built to look like a mechanism under load. It is the loudest style on this page that is still completely disciplined — every element is doing structural work, and there is no decoration anywhere. Choose it for manifestos, launches and anything that must read as a position rather than a product.',
+        rules: [
+            'The diagonal is load-bearing. Headline blocks, rules and photographic masks all sit between 8 and 20 degrees off axis. Only the reading paragraph stays square.',
+            'Three colours, no fourth: #d4232a red, #111 black, #efeae1 paper. A second hue destroys the style instantly.',
+            'Rules and wedges must run past the edge of the frame. The composition reads as a crop out of something larger — a shape that stops politely inside the margin reads as a box.',
+            'Display type is a heavy grotesque squeezed horizontally to 0.82–0.88. Condensed weight is the voice; do not substitute a light face at large size.',
+            'One action per screen, in red. Red is never decorative and never appears twice.'
+        ],
+        type: [
+            'One heavy sans at 900 for display, scaled to 0.84 horizontally, uppercase, leading at 0.82.',
+            'The same family at 400 for body at 17px/1.65 — plain, square to the page, deliberately calm against the shouting.',
+            'Micro-labels at 9–10px, 700, uppercase, 0.3em tracking. They are the style\'s connective tissue; use several per screen.',
+            'Two type sizes doing all the work: enormous and small. Nothing in between.'
+        ],
+        form: [
+            'Radius 0 everywhere. There is not one rounded corner in this style.',
+            'Borders 2px solid #111 on cards; red rules 3px, full-bleed, rotated.',
+            'No shadow, no gradient, no texture beyond the paper itself.',
+            'Cards may be rotated 2–3 degrees, but only cards. Never rotate the reading column.'
+        ],
+        motion: [
+            'Transitions are 150ms linear — mechanical, not eased. Nothing here should feel soft.',
+            'Hover swaps red for black on the primary action rather than lightening it.',
+            'If anything moves on scroll, it slides along the diagonal axis, never straight up.'
+        ],
+        layout: 'Max-width 72rem with a strong asymmetric split — a two-thirds reading column against a one-third tilted panel. Vertical rhythm 112px. The wedge and the rules are absolutely positioned against the section, not against the content, so they cut across the grid instead of respecting it.',
+        comp: [
+            'Button, primary — solid #d4232a, paper-coloured label, 800 weight, 0.18em tracking, zero radius, no border; goes black on hover.',
+            'Card — #fdfcfa on a 2px #111 border, 1.6rem padding, optionally rotated -2.5deg.',
+            'Wedge — an absolutely positioned black clip-path polygon crossing the full section width.',
+            'Rule — a 3px red bar at 120% width, offset left, rotated 9–14 degrees.',
+            'Nav — no bar. Micro-labels at the top corners, one on each side, and nothing else.'
+        ],
+        dos: [
+            'Let the black wedge run under the type so headlines cross from paper onto black mid-word.',
+            'Use the micro-labels liberally — they are what make it read as a printed bureau document.',
+            'Keep exactly one red action per screen.'
+        ],
+        donts: [
+            'Do not centre anything. Symmetry is the opposite of this style\'s argument.',
+            'Do not introduce a third geometry — no circles as decoration, no curves at all.',
+            'Do not soften the palette toward maroon or charcoal. Both values are absolute.'
+        ],
+        a11y: 'The palette is genuinely strong: #111 on #efeae1 is over 15:1 and #d4232a on paper clears 4.5:1 at normal size. The risks are structural rather than chromatic — rotated text hurts readers with tracking difficulties, so cap rotation on any running text at zero and keep it to display type; and the black wedge must never pass under body copy, only under headlines set in paper colour.',
+        check: [
+            'Every rule and wedge exits the frame on at least one side.',
+            'The page uses exactly three colours.',
+            'No corner on the page is rounded.',
+            'Exactly one element is red and clickable.'
+        ]
+    },
+
+    stijl: {
+        canvas: 'canvasST', theme: 'theme-stijl', label: 'Concept 39', series: 'Series II — Movements',
+        name: 'De Stijl / Neoplasticism',
+        tagline: 'Three primaries, two directions, no symmetry. Nothing else is permitted.',
+        bg: 'Off-white #f4f4f0 page with pure #ffffff cells. The rules are black; there is no fourth surface.',
+        intent: 'The most constrained language on this page and, because of it, the most instantly recognisable. Mondrian and van Doesburg reduced composition to three rules: only horizontals and verticals, only the three primaries plus black, white and grey, and never symmetry. Balance is achieved by weight instead of mirroring — one small red block far from centre answers a large white field near it. It reads as absolutely resolved, which is why it still gets borrowed for anything claiming rigour. The catch is that the constraints are the style: add a diagonal, a curve or a fourth hue and what remains is generic modernism.',
+        rules: [
+            'Only horizontals and verticals. There is no diagonal and no curve anywhere, including in icons and logos.',
+            'The black rules are the grid gap over a black ground, not borders drawn on cells. That is why every junction lands perfectly and why no rule ever stops short of an edge.',
+            'Only #c8102e red, #f2c200 yellow, #0b4ea2 blue, plus black, white and grey. Never a tint or a shade of any of them.',
+            'Colour fills are always a minority of the area — roughly one cell in five. The white is not background, it is the largest element in the composition.',
+            'Never symmetric. If the layout could be folded in half onto itself, redistribute the weight.'
+        ],
+        type: [
+            'One geometric or neo-grotesque sans, nothing else on the page.',
+            'Display at 900, uppercase, leading 0.88, tracking -0.03em, sitting on the baseline of its cell.',
+            'Body at 17px/1.7. Labels at 10px, 700, uppercase, 0.26em tracking.',
+            'Type aligns to the cell it occupies — bottom-left by default. Centred text belongs to a different style.'
+        ],
+        form: [
+            'Radius 0. Every corner is square, including on controls.',
+            'The rule weight is 9px and it is the only structural device. Thinner reads as a table; thicker reads as Neobrutalism.',
+            'No shadow, no gradient, no texture. The surface is flat by rule, not by fashion.',
+            'Cells are unequal on purpose: spans of 1, 2 and 4 columns in the same grid.'
+        ],
+        motion: [
+            'Transitions 200ms ease, on colour only.',
+            'Hover fills a white cell with a primary. Nothing moves, scales or lifts — motion would introduce a diagonal.',
+            'Focus is a black inset ring, square, matching the rule weight.'
+        ],
+        layout: 'A single CSS grid at max-width 72rem with gap:9px over a black background and a matching 9px black border, so the gaps read as rules. Cells span unequally. Below 640px the grid collapses to two columns rather than one, because a single stack loses the composition entirely.',
+        comp: [
+            'Grid — display:grid; gap:9px; background:#111; border:9px solid #111. Every cell is a child.',
+            'Cell — white by default, or one of the three primaries; min-height 68px; padding 1rem 1.1rem; content bottom-aligned.',
+            'Button — a filled primary cell with white 700 label, square, no border of its own.',
+            'Headline block — a two-column-span white cell carrying the display type at the bottom edge.',
+            'Nav — a single-row grid across the top with the wordmark in one cell and links in the next, separated by the same rules.'
+        ],
+        dos: [
+            'Build the whole page as one grid, so the rules are continuous from edge to edge.',
+            'Let one primary dominate slightly and use the other two sparingly.',
+            'Vary cell sizes aggressively — equal cells produce a spreadsheet, not a composition.'
+        ],
+        donts: [
+            'Do not round anything, ever.',
+            'Do not add a fourth colour, including greys other than the neutral.',
+            'Do not centre the composition or mirror it left to right.'
+        ],
+        a11y: 'Contrast is excellent by construction: black on white, white on #c8102e and #0b4ea2 all pass comfortably. The one trap is #f2c200 yellow, which fails with white and must always carry black text. Because the layout is a grid of coloured blocks, make sure the DOM order still reads sensibly, and never rely on cell colour alone to indicate state.',
+        check: [
+            'No diagonal or curve exists anywhere on the page.',
+            'Every black rule runs uninterrupted between two edges.',
+            'Exactly six colours are in use, three of them primaries.',
+            'The layout cannot be folded onto itself.'
+        ]
+    },
+
+    psychedelic: {
+        canvas: 'canvasPS', theme: 'theme-acid', label: 'Concept 40', series: 'Series II — Movements',
+        name: 'Psychedelic / Moscoso',
+        tagline: 'Equal-value complementaries that will not resolve — the page appears to move without moving.',
+        bg: 'Deep violet #6c00a8 under a magenta-and-lime sunburst. There is no neutral ground anywhere in this style.',
+        intent: 'The San Francisco concert poster of 1966–68, and the only style here built on a perceptual trick rather than a taste. Place two saturated complementaries at nearly the same luminance and the eye cannot find the edge between them, so the boundary shimmers. Magenta against lime does it; magenta against white does not. Legibility is spent deliberately — a poster only had to be readable long enough to make you cross the street, and the difficulty was the invitation. On a screen that trade costs far more than it did on a wall, so the discipline is to confine the vibration to display type and keep reading text on a flat panel.',
+        rules: [
+            'The vibration comes from equal luminance, not from saturation alone. Check the pair in greyscale: if one goes obviously darker, the effect is gone and you have merely picked loud colours.',
+            'Zero blur on the complementary halo. Any blur at all lets the edge resolve and kills the whole style.',
+            'Radial geometry organises the page — sunburst rays and concentric rings, not a grid. There is one optical centre and everything orbits it.',
+            'Display lettering is warped to fill its shape rather than set on a line. Letterforms swell and compress to fit the ring or the panel they sit in.',
+            'Body copy always sits on an opaque dark panel. The vibrating field is for display type only.'
+        ],
+        type: [
+            'A heavy geometric display face at 900, uppercase, tight leading (0.92) and near-zero tracking, so letters touch and fill.',
+            'A 2px complementary text-shadow on both sides of display type — the halo that produces the shimmer.',
+            'Body at 16px/1.7 in yellow #ffe94a or lime #9dff2e, on the dark panel only.',
+            'Labels uppercase at 0.25em tracking. Never set body copy in the vibrating pair.'
+        ],
+        form: [
+            'Radius is generous and organic — 28px on panels, 999px on controls and discs.',
+            'The sunburst is a repeating-conic-gradient of the complementary pair at 9-degree segments.',
+            'Rings are a hard-stop radial-gradient — discrete bands, never a smooth fade.',
+            'Borders are 3px in the opposing accent, which keeps the panel from dissolving into the field.'
+        ],
+        motion: [
+            'The shimmer is optical, not animated — which is why it survives prefers-reduced-motion untouched. Never animate it.',
+            'Hover scales a control slightly and rotates it a degree or two, 200ms ease.',
+            'Avoid animated hue rotation. It looks like a screensaver and destroys the equal-luminance relationship the style depends on.'
+        ],
+        layout: 'A centred column at max-width 72rem over a full-bleed sunburst, with 112px vertical rhythm. One circular focal element per screen, offset from centre. Reading content lives in flat panels no wider than 34rem so the field is always visible around them.',
+        comp: [
+            'Panel — #2a0140 fill, 3px #9dff2e border, 28px radius, 1.8rem padding. This is where all reading happens.',
+            'Button — #ff6a00 fill, #2a0140 label, 3px dark border, fully round; scales 1.06 and rotates -2deg on hover.',
+            'Disc — a hard-stop radial-gradient in four bands, with a dark inner circle carrying the display type.',
+            'Rays — repeating-conic-gradient at 9deg alternating the complementary pair, on a full-bleed layer at 0.85 opacity.',
+            'Nav — dark panel bar with lime links; the wordmark is set in the vibrating treatment, the links are not.'
+        ],
+        dos: [
+            'Test the pair in greyscale before shipping it — that is the whole technique.',
+            'Keep exactly one optical centre per screen.',
+            'Let display type distort to fill its container; regular letterspacing reads as a costume.'
+        ],
+        donts: [
+            'Do not blur the halo, and do not soften the ring stops.',
+            'Do not set body text on the sunburst.',
+            'Do not animate the colours. The effect is already motion; adding real motion produces nausea, not energy.'
+        ],
+        a11y: 'This is the least accessible concept on this page and it should be described as such rather than defended. Lime #9dff2e on magenta #d0009b is roughly 1.3:1 and fails every threshold — that failure is the effect. Contain it: every piece of reading text sits on #2a0140 where yellow #ffe94a clears 11:1, the vibrating treatment is barred from any text under 32px, and no state or meaning is ever carried by the shimmer alone. Because the effect is drawn rather than animated, reduced-motion users are unaffected, but consider an opt-out that swaps the sunburst for a flat violet field.',
+        check: [
+            'The complementary pair converges to a single grey in greyscale.',
+            'No text under 32px carries the halo treatment.',
+            'All body copy sits on an opaque panel.',
+            'Nothing on the page animates its hue.'
+        ]
+    },
+
+    swisspunk: {
+        canvas: 'canvasWG', theme: 'theme-punk', label: 'Concept 41', series: 'Series II — Movements',
+        name: 'Swiss Punk / Weingart',
+        tagline: 'The Swiss grid, still visible, and violated by whole units.',
+        bg: 'Warm grey #e8e4dc with the working grid left faintly visible over it. The grid is the ground.',
+        intent: 'Weingart taught inside the Basel school and then spent a career pulling it apart. The grid of Concept H is still underneath everything — deliberately left visible — but baselines step, letterspacing opens past legibility, halftone screens are enlarged until the dots stop being tone and become the image, and blocks rotate a degree or two off true. This is what separates it from Concept Z: zine chaos has no grid to violate, while Swiss Punk is legible precisely as a violation, and every offset is a whole number of grid units. Break the grid at random and you get neither style. Choose it for editorial, cultural and type-led work that needs to look intelligent rather than merely loud.',
+        rules: [
+            'The grid must remain perceptible — a faint ruled bed behind the content. Hiding it turns every deliberate break into an accident.',
+            'Every violation is a whole grid unit. Stepped baselines shift by exactly one column (68px here), never by an arbitrary amount.',
+            'Halftone is enlarged past the point of reading as tone: 11px dot pitch or coarser, so the screen becomes the image.',
+            'Extreme letterspacing (0.5em+) is reserved for short uppercase labels. Applying it to a sentence is the beginner\'s version of this style.',
+            'Rotation is small and rare — 1.5 to 3 degrees, on one or two elements per screen. Larger angles read as Constructivism (Concept 38).'
+        ],
+        type: [
+            'One neo-grotesque doing everything, exactly as in Concept H. The rupture is positional, not typefacial.',
+            'Display at 800, uppercase, leading 0.95, tracking -0.035em, set in a stepped stack of three lines.',
+            'A single enormous numeral (0.8 leading, 10rem+) used as a compositional element rather than as information.',
+            'Labels at 0.52em tracking, 10–11px, 600. Body stays plain at 17px/1.7 — the reading text is never the thing being broken.'
+        ],
+        form: [
+            'Radius 0 throughout. Softness would read as apology.',
+            'The grid bed is two repeating-linear-gradients: 68px columns at 10% ink, 22px baselines at 6%.',
+            'Halftone is a radial-gradient background-image at 11px, clipped to a circle.',
+            'Panels are 1px hairline on white #fdfcf8. Solid accent slabs sit behind short labels, rotated -1.5deg.'
+        ],
+        motion: [
+            'Transitions 200ms ease on colour and background only.',
+            'Hover swaps an accent slab from blue to orange. Nothing translates — the offsets are compositional and must stay put.',
+            'No scroll-linked motion. This style is a printed page; it does not respond to the scroll position.'
+        ],
+        layout: 'Max-width 72rem on a 68px column grid with a 22px baseline. Content sits at two-thirds against a one-third panel. The stepped headline is the only element permitted to break the left margin, and it breaks it by exactly one, two and three columns on successive lines.',
+        comp: [
+            'Panel — #fdfcf8, 1px rgba(20,33,61,.35) border, 1.5rem padding, zero radius.',
+            'Slab — solid #1b4dd8 with paper-coloured label, inline-block, rotated -1.5deg, 0.3rem/0.7rem padding.',
+            'Halftone disc — radial-gradient dots at 11px pitch, clipped round, 120px, used as the only image on the page.',
+            'Stepped headline — three block spans with margin-left of 0, 68px and 136px; the third takes the secondary accent.',
+            'Nav — no bar; a widely tracked label at each end of a hairline rule.'
+        ],
+        dos: [
+            'Leave the grid visible and let the reader see what is being broken.',
+            'Measure every offset in grid units and keep the numbers round.',
+            'Give the composition one enormous element — a numeral or a halftone — and keep everything else small.'
+        ],
+        donts: [
+            'Do not break the grid at random; that is Concept Z and it needs different craft.',
+            'Do not letterspace running text.',
+            'Do not add a third accent. Blue and orange are already an argument.'
+        ],
+        a11y: 'Ink #14213d on #e8e4dc clears 12:1 and the blue accent passes at normal size; the orange #ff6a13 is display-only and must not carry small text on the paper ground. The real risks are structural: stepped baselines can break the reading order for screen readers if built with positioning, so implement them as ordinary block elements with margins, and keep the visible grid bed at pointer-events:none and aria-hidden so it never enters the accessibility tree.',
+        check: [
+            'The grid bed is visible behind the content.',
+            'Every offset is an exact multiple of the column width.',
+            'Letterspacing above 0.3em appears only on uppercase labels.',
+            'No element is rotated more than 3 degrees.'
+        ]
+    },
+
+    teletext: {
+        canvas: 'canvasTX', theme: 'theme-teletext', label: 'Concept 42', series: 'Series II — Character-Cell',
+        name: 'Teletext / Ceefax',
+        tagline: 'Eight colours, forty columns, no alpha. Every constraint is a hardware fact.',
+        bg: 'Pure #000000 inside the screen, with a grey bezel around it. Black is not a dark theme here — it is the absence of signal.',
+        intent: 'Broadcast from 1974, and the purest example on this page of an aesthetic that was never a taste. Eight colours because the signal carried three bits. Blocky mosaics because the character ROM had no curves. Double-height headlines because a control code could stretch a row and nothing finer existed. That is exactly why it still works as a design language: the restrictions were never fashion, so they never dated. Snap everything to a 40x25 character cell, refuse tints and blends, and the result is coherent without a single judgement call. Choose it for anything wanting the authority of a public utility; reject it wherever dense reading matters.',
+        rules: [
+            'Exactly eight colours: black, red, green, yellow, blue, magenta, cyan, white — full-on RGB primaries with no intermediate values. A tint anywhere breaks the illusion completely.',
+            'Everything measures in character cells. Widths are in ch, the screen is 40ch wide, and no element occupies a partial cell.',
+            'Coloured blocks are full rows or full cells. There is no such thing as a rounded, padded or partially filled block.',
+            'Headlines use double-height rows — a vertical scale of roughly 1.9 anchored to the top of the row, with the following row left empty exactly as the format required.',
+            'No antialiasing, no blur, no shadow, no gradient. There was no alpha channel to make them with.'
+        ],
+        type: [
+            'One monospace, everywhere, at one size. IBM Plex Mono here; any fixed-pitch face works as long as nothing else appears on the page.',
+            'Line-height locked to 1.24, letter-spacing 0.04em, so rows stack on an exact cell grid.',
+            'Everything is uppercase. The original character set had lowercase but almost nothing used it.',
+            'Double-height for headlines only, one per screen area, and never nested inside a coloured row that also carries body text.'
+        ],
+        form: [
+            'Radius 0 on everything inside the screen. The only rounded thing on the page is the bezel around it.',
+            'Colour is applied as a full-cell background with a contrasting foreground, never as a border.',
+            'Mosaic graphics are built from the block glyphs — the eighth-block and half-block characters — laid on the cell grid.',
+            'The bezel is the one concession to the physical object: #2b2b2b, 10px radius, with an inset 2px lighter ring.'
+        ],
+        motion: [
+            'None. The format had a page-flip and nothing else; anything smoother reads as a different era.',
+            'If a transition is unavoidable, cut instantly between states rather than fading.',
+            'Do not simulate CRT scanlines or flicker here — that is Concept T, and mixing them muddles both.'
+        ],
+        layout: 'The screen is a fixed 40ch column, centred, and it does not reflow — it scales. Around it the page can be an ordinary two-column layout, but inside the bezel every row is a flex line with space-between and white-space:pre so the cell alignment survives.',
+        comp: [
+            'Screen — #000 ground, max-width 42ch, 0.6ch/1ch padding, font-size clamped between 0.66rem and 0.95rem.',
+            'Header row — two spans, space-between: page number in cyan on the left, date and time in yellow on the right.',
+            'Banner row — full-width background in one of the eight, with a contrasting label; used for section headings.',
+            'Index row — label, dot leaders, and a page number, all inside one pre-formatted line.',
+            'Mosaic strip — a row of block glyphs in three or four of the eight colours, aligned to the cell grid.'
+        ],
+        dos: [
+            'Lock the palette to eight constants and reference nothing else.',
+            'Let the screen scale rather than reflow; a reflowed teletext page is a broken one.',
+            'Use the yellow-on-blue and black-on-cyan pairs for anything that must actually be read.'
+        ],
+        donts: [
+            'Do not add a ninth colour, including a grey.',
+            'Do not round, pad or shadow anything inside the screen.',
+            'Do not put long-form reading matter in this style. Forty columns is a headline medium.'
+        ],
+        a11y: 'The palette is the problem and it must be managed rather than excused. Pure blue #0000ff on black is about 2.4:1 and pure red #ff0000 about 5.2:1 — the original medium got away with both at a viewing distance no monitor has. Restrict blue and red to backgrounds carrying yellow or white text, and keep white, yellow and cyan for foreground. Because the screen scales instead of reflowing, set a minimum font-size floor so it never drops below readable, and mark the mosaic strips aria-hidden since they carry no information.',
+        check: [
+            'A colour audit returns exactly eight values.',
+            'Every width inside the screen is expressed in ch.',
+            'No element inside the screen has a radius, shadow or gradient.',
+            'Blue and red appear only as backgrounds, never as text colour.'
+        ]
+    },
+
+    bbs: {
+        canvas: 'canvasBB', theme: 'theme-ansi', label: 'Concept 43', series: 'Series II — Character-Cell',
+        name: 'ANSI / BBS Demoscene Art',
+        tagline: 'CP437 on the EGA sixteen: the terminal used as a canvas, not as a mood.',
+        bg: 'The DOS blue #0000aa, on a #000080 page. Nobody chose this blue — it was the default — and keeping it is part of the reference.',
+        intent: 'The demoscene took the same character-cell constraint as Concept 42 and drew pictures with it anyway. Logos, borders and ornament are all made from the CP437 box-drawing and shade glyphs, at exactly the same cell size as the text beside them. Gradients are three discrete characters — light, medium, dark — because there was no alpha to fade with. Where Concept T borrows the terminal as an atmosphere, this uses the terminal as a drawing surface, which is a different and much stricter discipline. Choose it for developer tools, release notes and anything addressing an audience that will recognise the reference; reject it anywhere the content must reflow.',
+        rules: [
+            'Every graphic element is a character. Box corners, rules, logos and shading are glyphs on the grid, never borders or images.',
+            'The shade ramp is three literal characters — light, medium, dark — plus solid. Opacity is not available and simulating it with rgba defeats the style.',
+            'The palette is the sixteen EGA colours and no others, on the default blue field.',
+            'Eighty columns is the hard limit. Long art scrolls horizontally; it never wraps, because reflowed ANSI is destroyed ANSI.',
+            'Text and art share one cell size and one font. If the logo is set in a different face or size, the illusion collapses immediately.'
+        ],
+        type: [
+            'One monospace stack for the entire section, at a single size with line-height 1.3.',
+            'Block-art wordmarks are two rows of glyphs at line-height 1.02, so the halves join without a seam.',
+            'Menu keys are a single bright character on a cyan field; labels sit in cyan, values in dim cyan.',
+            'Mixed case is fine for prose, but all art, menus and status lines are uppercase.'
+        ],
+        form: [
+            'Radius 0. The only border is a 3px double rule in bright cyan, standing in for the double box-drawing line.',
+            'Panels are 1px in the dim cyan #00aaaa; the bright #55ffff is reserved for the outer frame and for keys.',
+            'No shadow and no gradient. Depth is faked with the shade ramp and nothing else.',
+            'white-space is pre and overflow-x is auto on every art block.'
+        ],
+        motion: [
+            'A block cursor is the only animation the style permits, and even that is optional.',
+            'No transitions on colour or position; the era had instant redraws.',
+            'If you must animate, do it by swapping characters on a fixed interval, not by tweening anything.'
+        ],
+        layout: 'Two columns at max-width 72rem: an art screen and a reading column. The art screen has its own fixed character width and scrolls horizontally inside itself rather than reflowing, so the surrounding page can stay responsive while the art stays intact.',
+        comp: [
+            'Screen — #0000aa fill, 3px double #55ffff border, 1.1rem/1.3rem padding, white-space pre, overflow-x auto.',
+            'Wordmark — two pre-formatted rows of block glyphs at line-height 1.02 in bright cyan.',
+            'Frame — box-drawing double-line corners and edges as literal characters, in dim cyan with a white label inside.',
+            'Menu row — a bright key on a cyan field, then a cyan label, then a dim-cyan value, aligned with tabs.',
+            'Shade ramp — the three shade glyphs plus solid, in sequence, used as a legend or a divider.'
+        ],
+        dos: [
+            'Draw the ornament from the same character set as the text.',
+            'Let art scroll horizontally inside its own container.',
+            'Keep the default blue. Substituting a tasteful navy removes the entire reference.'
+        ],
+        donts: [
+            'Do not use rgba shading or CSS gradients to fake the ramp.',
+            'Do not reflow or wrap an art block at any breakpoint.',
+            'Do not add CRT scanlines or glow — that is Concept T borrowing the terminal as a mood, which is the opposite of what this style does.'
+        ],
+        a11y: 'The default palette is weak: #aaaaaa on #0000aa is roughly 3.6:1 and fails for body text, so reading copy uses white #ffffff (about 8.6:1) and the grey is confined to secondary values. Bright cyan #55ffff on blue passes comfortably and carries the interactive elements. Block art is decorative and must be marked aria-hidden or given a text alternative, because a screen reader will otherwise announce it glyph by glyph; the horizontally scrolling art container needs a tabindex so keyboard users can reach its scrollbar.',
+        check: [
+            'Every graphic element on the page is a text character.',
+            'A search for rgba() or linear-gradient inside the section returns nothing.',
+            'No art block wraps at any viewport width.',
+            'Body copy is white, not grey.'
+        ]
+    }
+};
+
+/* --- Brief renderer ------------------------------------------------ */
+
+function segList(arr, bullet) {
+    return arr.map(s => (bullet || '- ') + s).join('\n');
+}
+
+function segNumbered(arr) {
+    return arr.map((s, i) => (i + 1) + '. ' + s).join('\n');
+}
+
+// The palette table is read from the specimen's own style entry, so a
+// change to the drawing cannot silently invalidate the brief.
+function segPalette(p) {
+    const s = LP_STYLES[p.canvas] || {};
+    const rows = [['Page background', p.bg]];
+    SEG_ROLES.forEach(([key, role]) => {
+        if (key === 'bg') return;              // already stated in prose
+        if (!s[key]) return;
+        rows.push([role, '`' + s[key] + '`']);
+    });
+    return ['| Role | Value |', '| --- | --- |']
+        .concat(rows.map(r => '| ' + r[0] + ' | ' + r[1] + ' |'))
+        .join('\n');
+}
+
+function segMetrics(p) {
+    const s = LP_STYLES[p.canvas] || {};
+    const bits = [];
+    if (s.radius !== undefined) bits.push('surface radius ' + s.radius + 'px');
+    if (s.btnRadius !== undefined) bits.push('control radius ' + s.btnRadius + 'px');
+    if (s.border) bits.push('border ' + s.border + 'px solid ' + (s.borderColor || '#000'));
+    if (s.shadow && s.shadow !== 'none') {
+        bits.push('shadow style "' + s.shadow + '"'
+            + (s.shadowOff ? ' at ' + s.shadowOff + 'px offset' : '')
+            + (s.shadowColor ? ' in ' + s.shadowColor : ''));
+    }
+    if (!bits.length) return '';
+    return '\nMeasured off the specimen: ' + bits.join(', ') + '.\n';
+}
+
+/* Pull the concept's real CSS out of the page's own stylesheet.
+   Retyping it into the table would let the brief drift from the
+   specimen; reading it means the two cannot disagree.
+
+   The source is sliced on its banner comments rather than matched on
+   `.theme-*`, because the interesting rules are the component classes
+   (.aero-glass, .nb-press, @keyframes bubbleRise) whose selectors
+   never mention the theme. Banners are the only reliable boundary. */
+const SEG_CSS_BLOCK = {
+    neobrutalist: 'A. NEOBRUTALISM', glass: 'B. GLASSMORPHISM', bento: 'C. BENTO',
+    skeuo: 'D. NEUMORPHISM', cyber: 'E. CYBERPUNK', material: 'F. MATERIAL 3',
+    maximalism: 'G. MAXIMALISM', minimalism: 'H. SWISS', retro: 'I. Y2K',
+    aurora: 'J. AURORA', memphis: 'K. MEMPHIS', wireframe: 'L. BLUEPRINT',
+    clay: 'M. CLAYMORPHISM', organic: 'N. ORGANIC', synthwave: 'O. SYNTHWAVE',
+    popart: 'P. POP ART', zen: 'Q. ZEN', riso: 'R. RISOGRAPH', cosmic: 'S. COSMIC',
+    terminal: 'T. TERMINAL', util: 'U. UTILITARIAN', vaporwave: 'V. VAPORWAVE',
+    watercolor: 'W. WATERCOLOR', aero: 'Y. FRUTIGER AERO', zine: 'Z. ZINE',
+    liquid: '27. LIQUID GLASS', spatial: '28. SPATIAL', ainative: '29. AI-NATIVE',
+    kinetic: '30. KINETIC', skeuotrue: '31. TRUE SKEUOMORPHISM', bauhaus: '32. BAUHAUS',
+    deco: '33. ART DECO', a11y: '34. ACCESSIBILITY-FIRST', editorial: '35. EDITORIAL',
+    designsystem: '36. DESIGN SYSTEM', nouveau: '37. JUGENDSTIL',
+    konstrukt: '38. SOVIET CONSTRUCTIVISM', stijl: '39. DE STIJL',
+    psychedelic: '40. PSYCHEDELIC', swisspunk: '41. SWISS PUNK',
+    teletext: '42. TELETEXT', bbs: '43. ANSI / BBS'
+};
+
+let segBlocksCache = null;
+
+function segCssBlocks() {
+    if (segBlocksCache) return segBlocksCache;
+    segBlocksCache = {};
+    const el = document.getElementById('spectrumCss');
+    if (!el) return segBlocksCache;
+    const txt = el.textContent;
+    // A banner is a comment whose first and last lines are long rules
+    // of = or -. Short inline comments inside a block never match.
+    const banner = /\/\*\s*[-=]{20,}([\s\S]*?)[-=]{20,}\s*\*\//g;
+    const found = [];
+    let m;
+    while ((m = banner.exec(txt))) {
+        found.push({ title: m[1].trim(), start: m.index, end: banner.lastIndex });
+    }
+    found.forEach((b, i) => {
+        const body = txt.slice(b.end, i + 1 < found.length ? found[i + 1].start : txt.length);
+        segBlocksCache[b.title] = { title: b.title, body: body };
+    });
+    return segBlocksCache;
+}
+
+// The authored source is indented eight spaces inside <style>; strip
+// that so the fenced block in the brief is flush left.
+function segDedent(s) {
+    const lines = s.replace(/\s+$/, '').split('\n');
+    let min = Infinity;
+    lines.forEach(l => {
+        if (!l.trim()) return;
+        min = Math.min(min, l.length - l.replace(/^ +/, '').length);
+    });
+    if (!isFinite(min) || !min) return lines.join('\n').replace(/^\n+/, '');
+    return lines.map(l => l.slice(min)).join('\n').replace(/^\n+/, '');
+}
+
+// Concept X is the only one with no authored block — it is Tailwind
+// utilities and inline styles all the way down — so it carries its own.
+const SEG_CSS_MANUAL = {
+    baseline: [
+        '/* X. AI DEFAULT / CLEAN FUNCTIONALISM */',
+        '',
+        ':root {',
+        '    --bg: #0B0E14;',
+        '    --surface: #141922;',
+        '    --border: #1f2937;',
+        '    --ink: #e2e8f0;',
+        '    --ink-soft: #94a3b8;',
+        '    --accent: #6366f1;',
+        '    --radius: 8px;',
+        '    --radius-control: 6px;',
+        '}',
+        '',
+        'body {',
+        '    background: var(--bg);',
+        '    color: var(--ink);',
+        '    font-family: Inter, system-ui, sans-serif;',
+        '}',
+        '',
+        '.card {',
+        '    background: var(--surface);',
+        '    border: 1px solid var(--border);',
+        '    border-radius: var(--radius);',
+        '    padding: 24px;',
+        '    /* no box-shadow: elevation is the surface step, not a shadow */',
+        '}',
+        '',
+        '.btn {',
+        '    background: var(--accent);',
+        '    color: #fff;',
+        '    border-radius: var(--radius-control);',
+        '    padding: 10px 20px;',
+        '    transition: background .15s ease;',
+        '}',
+        '',
+        '.btn-secondary {',
+        '    background: transparent;',
+        '    color: var(--ink);',
+        '    border: 1px solid #334155;',
+        '}',
+        '',
+        '.btn:focus-visible,',
+        '.btn-secondary:focus-visible {',
+        '    outline: 2px solid var(--accent);',
+        '    outline-offset: 2px;',
+        '}'
+    ].join('\n')
+};
+
+function segCss(key) {
+    if (SEG_CSS_MANUAL[key]) return SEG_CSS_MANUAL[key];
+    const marker = SEG_CSS_BLOCK[key];
+    if (!marker) return '';
+    const blocks = segCssBlocks();
+    const hit = Object.keys(blocks).find(t => t.indexOf(marker) === 0);
+    if (!hit) { console.warn('no css block for', key, marker); return ''; }
+    const b = blocks[hit];
+    const head = b.title.split('\n').map(l => l.trim()).filter(Boolean);
+    return '/* ' + head.join('\n   ') + ' */\n\n' + segDedent(b.body);
+}
+
+function buildDesignMd(key) {
+    const p = SEG_PROMPTS[key];
+    if (!p) return '';
+    const L = [];
+
+    L.push('# DESIGN.md — ' + p.name);
+    L.push('');
+    L.push('**' + p.label + ' · ' + p.series + ' of the UI Spectrum**  ');
+    L.push('*' + p.tagline + '*');
+    L.push('');
+    L.push(SEG_INTRO);
+    L.push('');
+    L.push('---');
+    L.push('');
+
+    L.push('## 1. Intent');
+    L.push('');
+    L.push(p.intent);
+    L.push('');
+
+    L.push('## 2. Load-bearing rules');
+    L.push('');
+    L.push('These are what make the style legible. Drop one and the result reads as generic.');
+    L.push('');
+    L.push(segNumbered(p.rules));
+    L.push('');
+
+    L.push('## 3. Palette');
+    L.push('');
+    L.push(segPalette(p));
+    L.push('');
+    L.push('Treat these as the seed. Extend by interpolating within them; do not introduce a hue');
+    L.push('that is not derivable from what is above.');
+    L.push('');
+
+    L.push('## 4. Typography');
+    L.push('');
+    L.push(segList(p.type));
+    L.push('');
+
+    L.push('## 5. Form — geometry, elevation, texture');
+    L.push('');
+    L.push(segList(p.form));
+    const m = segMetrics(p);
+    if (m) L.push(m);
+    L.push('');
+
+    L.push('## 6. Motion & interaction');
+    L.push('');
+    L.push(segList(p.motion));
+    L.push('');
+
+    L.push('## 7. Layout');
+    L.push('');
+    L.push(p.layout);
+    L.push('');
+    L.push(SEG_SPECIMEN);
+    L.push('');
+
+    L.push('## 8. Component recipes');
+    L.push('');
+    L.push(segList(p.comp));
+    L.push('');
+
+    L.push('## 9. Do / Don’t');
+    L.push('');
+    L.push('**Do**');
+    L.push('');
+    L.push(segList(p.dos));
+    L.push('');
+    L.push('**Don’t**');
+    L.push('');
+    L.push(segList(p.donts));
+    L.push('');
+
+    L.push('## 10. Accessibility');
+    L.push('');
+    L.push(p.a11y);
+    L.push('');
+
+    const css = segCss(key);
+    let n = 11;
+    if (css) {
+        L.push('## 11. Reference implementation');
+        L.push('');
+        L.push('The CSS of a working specimen of this concept, verbatim. Rename the classes to');
+        L.push('fit the project; keep the numbers, the layering order and the blend modes.');
+        L.push('');
+        L.push('```css');
+        L.push(css);
+        L.push('```');
+        L.push('');
+        n = 12;
+    }
+
+    L.push('## ' + n + '. Acceptance check');
+    L.push('');
+    L.push('Do not call the work done until every line is true:');
+    L.push('');
+    L.push(p.check.map(c => '- [ ] ' + c).join('\n'));
+    L.push('');
+    L.push('---');
+    L.push('');
+    L.push('*Source: UI Spectrum Explorer — concept `' + key + '` (' + p.label + ').*');
+    L.push('');
+
+    return L.join('\n');
+}
+
+/* --- Clipboard + wiring -------------------------------------------- */
+
+let segToastTimer = null;
+
+function segToast(msg, isErr) {
+    const el = document.getElementById('segToast');
+    if (!el) return;
+    el.innerHTML = msg;
+    el.classList.toggle('is-err', !!isErr);
+    el.classList.add('is-on');
+    clearTimeout(segToastTimer);
+    segToastTimer = setTimeout(() => el.classList.remove('is-on'), 3600);
+}
+
+// navigator.clipboard needs a secure context, and this document is
+// meant to be openable straight off disk — so file:// falls back to
+// the old execCommand path, and so does a rejected permission.
+function segLegacyWrite(text) {
+    return new Promise((resolve, reject) => {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.setAttribute('readonly', '');
+        ta.style.cssText = 'position:fixed;top:-2000px;left:-2000px';
+        document.body.appendChild(ta);
+        ta.select();
+        ta.setSelectionRange(0, text.length);
+        let ok = false;
+        try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+        document.body.removeChild(ta);
+        ok ? resolve() : reject(new Error('execCommand copy rejected'));
+    });
+}
+
+function segWrite(text) {
+    if (navigator.clipboard && window.isSecureContext) {
+        return navigator.clipboard.writeText(text).catch(() => segLegacyWrite(text));
+    }
+    return segLegacyWrite(text);
+}
+
+function segCopy(section, key) {
+    const p = SEG_PROMPTS[key];
+    const md = buildDesignMd(key);
+    segWrite(md).then(() => {
+        section.classList.add('is-copied');
+        const cue = section.querySelector('.seg-cue span:last-child');
+        if (cue) cue.textContent = 'DESIGN.md copied';
+        setTimeout(() => {
+            section.classList.remove('is-copied');
+            if (cue) cue.textContent = 'Copy DESIGN.md';
+        }, 1600);
+        segToast('Copied <b>DESIGN.md — ' + p.name + '</b> ('
+            + p.label + ', ' + md.length.toLocaleString() + ' characters).<br>'
+            + 'Save it as <b>DESIGN.md</b> and tell your agent to read it.');
+    }).catch(() => {
+        segToast('Could not reach the clipboard. Open this file over http://, '
+            + 'or copy from the console — <b>buildDesignMd(\'' + key + '\')</b>.', true);
+    });
+}
+
+function bindSegments() {
+    let bound = 0;
+    Object.keys(SEG_PROMPTS).forEach(key => {
+        const section = document.getElementById(key);
+        if (!section) { console.warn('segment missing', key); return; }
+        const p = SEG_PROMPTS[key];
+        section.classList.add('seg');
+
+        const veil = document.createElement('div');
+        veil.className = 'seg-veil';
+        veil.setAttribute('aria-hidden', 'true');
+        veil.innerHTML = '<span class="seg-cue"><span class="seg-cue-key">'
+            + p.label + '</span><span>Copy DESIGN.md</span></span>';
+        section.appendChild(veil);
+
+        // The keyboard path is a real button; the section-wide click is
+        // a pointer convenience on top of it, not the only way in.
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'seg-btn';
+        btn.textContent = 'Copy DESIGN.md';
+        btn.setAttribute('aria-label',
+            'Copy the DESIGN.md brief for ' + p.label + ', ' + p.name);
+        btn.addEventListener('click', ev => { ev.stopPropagation(); segCopy(section, key); });
+        section.appendChild(btn);
+
+        section.addEventListener('pointerenter', () => section.classList.add('is-hot'));
+        section.addEventListener('pointerleave', () => section.classList.remove('is-hot'));
+        section.addEventListener('pointermove', ev => {
+            const r = section.getBoundingClientRect();
+            section.style.setProperty('--seg-x', (ev.clientX - r.left) + 'px');
+            section.style.setProperty('--seg-y', (ev.clientY - r.top) + 'px');
+        });
+        section.addEventListener('click', ev => {
+            // Let genuine controls inside the specimen keep working.
+            if (ev.target.closest('a[href], input, textarea, select, .seg-btn')) return;
+            segCopy(section, key);
+        });
+        bound++;
+    });
+    const hint = document.getElementById('segHint');
+    if (hint && bound) hint.hidden = false;
+    // Handy when iterating on the briefs.
+    window.buildDesignMd = buildDesignMd;
+}
+
+/* =================================================================
+   HERO WALL + CONCEPT GRID
+   Built from SEG_PROMPTS rather than hand-written, because that
+   object is already keyed by section id, already carries the label
+   and name, and is already in page order — so neither the wall nor
+   the grid can drift out of sync with the document the way
+   hand-maintained copy does.
+
+   Thumbnails are <img> sharing one blob per concept, NOT a canvas
+   per tile. The wall needs each concept twice (once per loop copy,
+   more on a wide screen) and the grid needs it again: as canvases
+   that is ~24 MB of backing store on top of the ~50 MB the 43 HiDPI
+   specimens already cost. One decoded bitmap shared by every
+   reference is ~8 MB for the same pixels.
+
+   It runs after drawAllLandings in boot() because it re-encodes
+   what that pass drew.
+   ================================================================= */
+// Sized to the largest tile the wall renders (360px wide), so the
+// thumbnails are downscales of the 640x480 specimen rather than
+// upscales of something smaller. Going to the full 640x480 would
+// double the page's canvas memory for detail no tile can show.
+const HERO_TILE_W = 384, HERO_TILE_H = 288;
+const HERO_ROWS = 3;
+const HERO_SPEED = 30;          // px per second, equal on every row
+const HERO_SLOW = .5;           // hovered row's speed, as a fraction of normal
+const HERO_RAMP = 500;          // ms to travel between the two speeds
+const heroUrls = new Map();     // canvas id -> Promise<object URL>
+
+// Memoised: the second and third reference to a concept costs nothing
+// but an <img> pointing at a URL the browser has already decoded.
+function heroThumbUrl(canvasId) {
+    if (heroUrls.has(canvasId)) return heroUrls.get(canvasId);
+    const p = new Promise(resolve => {
+        const src = document.getElementById(canvasId);
+        if (!src || !src.width || !src.height) return resolve(null);
+        const off = document.createElement('canvas');
+        off.width = HERO_TILE_W;
+        off.height = HERO_TILE_H;
+        const cx = off.getContext('2d');
+        cx.imageSmoothingEnabled = true;
+        cx.imageSmoothingQuality = 'high';
+        cx.drawImage(src, 0, 0, HERO_TILE_W, HERO_TILE_H);
+        // toBlob keeps this off the main thread and avoids holding a
+        // multi-megabyte data: string per concept. The offscreen
+        // canvas is dropped here; only the decoded image survives.
+        if (off.toBlob) off.toBlob(b => resolve(b ? URL.createObjectURL(b) : null));
+        else resolve(off.toDataURL());
+    });
+    heroUrls.set(canvasId, p);
+    return p;
+}
+
+function heroTile(key, decorative) {
+    const p = SEG_PROMPTS[key];
+    const a = document.createElement('a');
+    a.className = 'hero-tile';
+    a.href = '#' + key;
+    if (p.series) a.dataset.series = p.series;
+
+    const img = document.createElement('img');
+    img.className = 'hero-thumb';
+    img.alt = '';
+    img.decoding = 'async';
+    heroThumbUrl(p.canvas).then(url => { if (url) img.src = url; });
+    a.appendChild(img);
+
+    const cap = document.createElement('span');
+    cap.className = 'hero-tile-cap';
+    const lab = document.createElement('b');
+    lab.textContent = p.label;
+    const nm = document.createElement('span');
+    nm.textContent = p.name;
+    cap.appendChild(lab);
+    cap.appendChild(nm);
+    a.appendChild(cap);
+
+    // In the wall the caption only appears on hover, so the name has
+    // to be carried explicitly or the link announces as bare.
+    a.setAttribute('aria-label', p.label + ': ' + p.name);
+
+    if (decorative) {
+        // A loop copy is the same link a second time. aria-hidden on
+        // its own would leave a focusable element inside hidden
+        // content — an ARIA violation — so the tab stop goes too.
+        a.setAttribute('aria-hidden', 'true');
+        a.tabIndex = -1;
+    }
+    return a;
+}
+
+function heroKeys() {
+    // A brief without a section is already reported by bindSegments;
+    // don't build a tile that would scroll nowhere.
+    return Object.keys(SEG_PROMPTS).filter(k => document.getElementById(k));
+}
+
+function buildHeroWall() {
+    const wall = document.getElementById('heroWall');
+    if (!wall) return;
+    const tracks = [...wall.querySelectorAll('.hero-track')];
+    if (tracks.length !== HERO_ROWS) return;
+
+    // Consecutive runs rather than round-robin, so each row still
+    // reads in document order. Spread the remainder one row at a time
+    // (43 -> 15 / 14 / 14) rather than rounding up and short-changing
+    // the last row, which would leave it visibly quicker round.
+    const keys = heroKeys();
+    const base = Math.floor(keys.length / HERO_ROWS);
+    const extra = keys.length % HERO_ROWS;
+    let at = 0;
+    const rows = tracks.map((_, i) => {
+        const n = base + (i < extra ? 1 : 0);
+        return keys.slice(at, at += n);
+    });
+
+    tracks.forEach((track, i) => {
+        const seq = document.createElement('div');
+        seq.className = 'hero-seq';
+        rows[i].forEach(k => seq.appendChild(heroTile(k, false)));
+        track.appendChild(seq);
+        track._heroKeys = rows[i];
+        track._heroCopies = 1;
+    });
+
+    if (REDUCED) {
+        // No clones: a frozen marquee is a window onto six tiles.
+        // Let the rows be plain scrollable strips instead.
+        wall.classList.add('is-static');
+        return;
+    }
+
+    heroFit(tracks);
+    heroBindHoverSpeed(tracks);
+
+    let t = null;
+    window.addEventListener('resize', () => {
+        clearTimeout(t);
+        t = setTimeout(() => heroFit(tracks), 200);
+    });
+
+    // Nothing should animate while it is scrolled past.
+    if (window.IntersectionObserver) {
+        new IntersectionObserver(es => {
+            wall.classList.toggle('is-paused', !es[0].isIntersecting);
+        }, { rootMargin: '120px' }).observe(wall);
+    }
+}
+
+/* Hovering a row eases it to half speed and releases it back again.
+   The rate is ramped rather than switched because a step change reads
+   as a stutter — you see the jump, not the slowdown.
+
+   This drives playbackRate rather than animation-duration: rewriting
+   the duration remaps the animation's whole progress, so the row
+   would leap to a new position on every rate change. Setting
+   playbackRate preserves current time and only alters what happens
+   next, which is exactly the property a speed ramp needs. It also
+   leaves the CSS animation in charge of the seam and of the
+   reduced-motion path, both of which already work. */
+function heroBindHoverSpeed(tracks) {
+    tracks.forEach(track => {
+        let rate = 1, target = 1, raf = null, last = 0;
+
+        function tick(now) {
+            // Cap dt so a backgrounded tab does not resume with one
+            // enormous step that skips the ramp entirely.
+            const dt = Math.min(now - last, 100);
+            last = now;
+            const step = (1 - HERO_SLOW) * dt / HERO_RAMP;
+            rate = rate < target
+                ? Math.min(target, rate + step)
+                : Math.max(target, rate - step);
+            track.getAnimations().forEach(a => { a.playbackRate = rate; });
+            raf = rate === target ? null : requestAnimationFrame(tick);
+        }
+
+        function ease(to) {
+            target = to;
+            if (raf === null) {
+                last = performance.now();
+                raf = requestAnimationFrame(tick);
+            }
+        }
+
+        // Bound on the row, not the wall, so only the row under the
+        // cursor slows. The plate sits above row 2 and takes its own
+        // pointer events, so reading the title leaves the wall alone.
+        const row = track.parentElement;
+        row.addEventListener('pointerenter', () => ease(HERO_SLOW));
+        row.addEventListener('pointerleave', () => ease(1));
+    });
+}
+
+// One sequence has to be at least as wide as the viewport or the wrap
+// exposes bare track; a 14-tile row spans ~3.2k px, which an ultrawide
+// beats. Copies are therefore derived from the viewport, not fixed.
+function heroFit(tracks) {
+    tracks.forEach((track, row) => {
+        const first = track.firstElementChild;
+        if (!first) return;
+        const seqW = [...first.children]
+            .reduce((sum, el) => sum + el.getBoundingClientRect().width
+                + parseFloat(getComputedStyle(el).marginRight || 0), 0);
+        if (!seqW) return;
+
+        const want = Math.max(2, Math.ceil(window.innerWidth / seqW) + 1);
+        for (let c = track._heroCopies; c < want; c++) {
+            const clone = document.createElement('div');
+            clone.className = 'hero-seq';
+            clone.setAttribute('aria-hidden', 'true');
+            track._heroKeys.forEach(k => clone.appendChild(heroTile(k, true)));
+            track.appendChild(clone);
+        }
+        track._heroCopies = Math.max(track._heroCopies, want);
+
+        // Shifting by exactly one sequence puts copy 2 where copy 1
+        // began. In pixels, because a percentage would depend on how
+        // many copies happen to exist at this viewport.
+        track.style.setProperty('--shift', seqW + 'px');
+        track.style.setProperty('--dur', (seqW / HERO_SPEED) + 's');
+
+        // Every row starts at translateX(0), which lines the tiles up
+        // in rigid columns — the sketch is a brick stagger. Starting
+        // each row a fraction of a tile into its own cycle offsets
+        // them immediately. A negative delay rather than a leading
+        // margin, which would show as blank track at the left edge.
+        const tile = first.firstElementChild;
+        const pitch = tile.getBoundingClientRect().width
+            + parseFloat(getComputedStyle(tile).marginRight || 0);
+        track.style.animationDelay = -(row * pitch / HERO_ROWS / HERO_SPEED) + 's';
+    });
+}
+
+// The grid is the tool for finding a named concept; the wall is not,
+// because it moves. Tiles are built on the first press and reuse the
+// wall's object URLs, so a visitor who never opens it pays nothing.
+function buildHeroIndex() {
+    const rail = document.getElementById('heroRail');
+    const btn = document.getElementById('heroIndexToggle');
+    if (!rail || !btn) return;
+
+    const keys = heroKeys();
+    // Count comes from what actually exists, never a literal — the
+    // page has already had one hard-coded total go stale.
+    const collapsed = 'Show all ' + keys.length;
+    btn.textContent = collapsed;
+
+    let built = false;
+    btn.addEventListener('click', () => {
+        if (!built) {
+            const frag = document.createDocumentFragment();
+            keys.forEach(k => {
+                const tile = heroTile(k, false);
+                tile.setAttribute('role', 'listitem');
+                frag.appendChild(tile);
+            });
+            rail.appendChild(frag);
+            built = true;
+        }
+        const open = rail.classList.toggle('is-grid');
+        btn.setAttribute('aria-expanded', String(open));
+        btn.textContent = open ? 'Collapse' : collapsed;
+    });
+}
+
+/* --- Boot -------------------------------------------------------- */
+// Each mark is isolated so one failure can't blank the whole page,
+// which is what the old single window.onload chain risked.
+function boot() {
+    [drawAllLandings, drawDither]
+        .forEach(fn => { try { fn(); } catch (err) { console.warn(fn.name, err); } });
+
+    // buildHeroWall re-encodes the bitmaps drawAllLandings just
+    // produced, so it must stay in this second pass, after the first
+    // has run. buildHeroIndex only wires a button, but it shares the
+    // same thumbnail cache, so it follows.
+    [buildStarfield, bindRipples, bindTerminal, bindSpecular, bindParallax, bindAIStream,
+        bindKinetic, bindAmbient, buildChaos, bindScrollSpy, bindReveal, initCharts,
+        bindSegments, buildHeroWall, buildHeroIndex]
+        .forEach(fn => { try { fn(); } catch (err) { console.warn(fn.name, err); } });
+}
+
+// Fonts affect the canvas text marks, so wait for them where supported.
+if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(boot).catch(boot);
+} else {
+    window.addEventListener('load', boot);
+}
