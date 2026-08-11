@@ -2639,6 +2639,93 @@
             font-weight: 600;
         }
 
+        /* ------------------------------------------------------------
+           KO-FI — support button (chrome, not a concept)
+           The one persistent element on a page whose whole argument is
+           that each section owns its own visual language, so it is kept
+           small and parked in the corner the specimens use least.
+           Drawn from borders and radii like everything else here: no
+           remote image, no third-party script, nothing to 404.
+           ------------------------------------------------------------ */
+        .kofi-fab {
+            position: fixed;
+            right: 1.25rem;
+            bottom: 1.25rem;
+            /* above the seg hover veil (40) so it never dims mid-section,
+               below the sticky nav (50) and skip link (100) so neither is
+               ever obscured by it. */
+            z-index: 45;
+            display: inline-flex;
+            align-items: center;
+            gap: .55rem;
+            padding: .7rem 1.1rem .7rem .9rem;
+            border-radius: 999px;
+            background: #ff5e5b;
+            /* Dark ink rather than Ko-fi's white: white on this coral is
+               ~3.0:1 and fails AA at label size. Concept 34 argues for
+               accessible defaults; the page should pass its own test. */
+            color: #231f20;
+            font-family: 'Inter', system-ui, sans-serif;
+            font-weight: 700;
+            font-size: .85rem;
+            line-height: 1;
+            text-decoration: none;
+            box-shadow: 0 10px 28px rgba(15, 23, 42, .28);
+            transition: transform .2s ease, box-shadow .2s ease;
+        }
+
+        .kofi-fab:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 34px rgba(15, 23, 42, .34);
+        }
+
+        .kofi-fab:focus-visible {
+            outline: 3px solid #0f172a;
+            outline-offset: 3px;
+        }
+
+        /* cup: vessel + handle, the same borders-and-radii trick used for
+           Concept 37's whiplash and Concept 41's halftone */
+        .kofi-cup {
+            position: relative;
+            width: 18px;
+            height: 15px;
+            flex: none;
+            /* the handle hangs 7px past the box, so reserve that much or it
+               crowds the label and the gap below does nothing */
+            margin-right: 7px;
+            background: #231f20;
+            border-radius: 2px 2px 7px 7px;
+        }
+
+        .kofi-cup::after {
+            content: '';
+            position: absolute;
+            right: -7px;
+            top: 2px;
+            width: 9px;
+            height: 9px;
+            border: 2.5px solid #231f20;
+            border-left-color: transparent;
+            border-radius: 50%;
+        }
+
+        /* On a phone the label is most of the footprint, so drop it and
+           keep the mark. The accessible name lives on the anchor's
+           aria-label, so it survives the label going away. */
+        @media (max-width: 480px) {
+            .kofi-fab {
+                /* .9rem lands the collapsed button on a 44px touch target;
+                   the cup's reserved handle space keeps it optically centred */
+                padding: .9rem;
+                gap: 0;
+            }
+
+            .kofi-label {
+                display: none;
+            }
+        }
+
         /* ============================================================
            ==========  EXPERIMENTAL — EXP-01 … EXP-10  ================
            Series I and II each let the whole section adopt the theme.
@@ -3212,6 +3299,178 @@
                 opacity: 1;
             }
         }
+
+        /* ------------------------------------------------------------
+           HERO INDEX — visual jump list (chrome, not a concept)
+           43 full-height sections is a long way to scroll to find one
+           style. Every concept already draws the same landing page in
+           its own treatment, so the thumbnails are free: the tiles are
+           drawImage copies of specimens that are on the page anyway.
+           A rail by default, one click from becoming the whole grid.
+           ------------------------------------------------------------ */
+        .hero-index {
+            background: #f1f5f9;
+            border-top: 1px solid #e2e8f0;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 2.5rem 1.5rem;
+        }
+
+        /* An empty rail is worse than no rail: the tiles are injected, so
+           hide the whole block until the script has confirmed it can run.
+           Reuses the .js class set on <html> at the top of the script. */
+        html:not(.js) .hero-index {
+            display: none;
+        }
+
+        .hero-index-head {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.1rem;
+        }
+
+        .hero-index-head h2 {
+            font-family: 'Inter', system-ui, sans-serif;
+            font-size: .78rem;
+            font-weight: 700;
+            letter-spacing: .18em;
+            text-transform: uppercase;
+            color: #64748b;
+        }
+
+        .hero-index-toggle {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: .72rem;
+            font-weight: 600;
+            color: #0f172a;
+            background: #fff;
+            border: 1px solid #cbd5e1;
+            border-radius: 999px;
+            padding: .4rem .9rem;
+            cursor: pointer;
+            transition: background-color .2s ease, border-color .2s ease;
+        }
+
+        .hero-index-toggle:hover {
+            background: #e2e8f0;
+            border-color: #94a3b8;
+        }
+
+        .hero-index-toggle:focus-visible {
+            outline: 3px solid #4f46e5;
+            outline-offset: 2px;
+        }
+
+        .hero-rail {
+            display: flex;
+            gap: 1rem;
+            overflow-x: auto;
+            scroll-snap-type: x proximity;
+            padding-bottom: .85rem;
+            /* Reserve the exact tile height before the script injects anything,
+               or the whole page jumps on boot. Derivation, at the 200px tile:
+               canvas 200x(192/256) = 150, fixed caption 63.2, two 1px borders,
+               plus this element's 13.6px padding-bottom = 228.8. */
+            min-height: 229px;
+        }
+
+        .hero-rail.is-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            overflow: visible;
+            min-height: 0;
+        }
+
+        .hero-tile {
+            flex: 0 0 200px;
+            scroll-snap-align: start;
+            display: block;
+            text-decoration: none;
+            background: #fff;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+            transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+        }
+
+        /* In grid mode the track sizes the tile, so the flex basis has to go
+           or every tile stays locked at 200px. */
+        .hero-rail.is-grid .hero-tile {
+            flex: initial;
+            width: auto;
+        }
+
+        .hero-tile:hover {
+            transform: translateY(-3px);
+            border-color: #94a3b8;
+            box-shadow: 0 10px 22px rgba(15, 23, 42, .13);
+        }
+
+        .hero-tile:focus-visible {
+            outline: 3px solid #4f46e5;
+            outline-offset: 2px;
+        }
+
+        /* These canvases never pass through getCtx, so nothing sets an inline
+           width on them and CSS keeps control of the size. */
+        .hero-tile canvas {
+            display: block;
+            width: 100%;
+            height: auto;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .hero-tile-cap {
+            display: block;
+            padding: .5rem .65rem .6rem;
+            font-family: 'Inter', system-ui, sans-serif;
+            line-height: 1.25;
+        }
+
+        .hero-tile-cap b {
+            display: block;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: .6rem;
+            font-weight: 600;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            color: #6366f1;
+            margin-bottom: .15rem;
+        }
+
+        /* Clamped to two lines and floored at two lines, so every caption is
+           the same height whatever the concept is called. That is what makes
+           the rail's reserved min-height below an exact figure rather than a
+           guess that a longer name would invalidate. */
+        .hero-tile-cap span {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            min-height: 2.5em;
+            font-size: .78rem;
+            font-weight: 600;
+            line-height: 1.25;
+            color: #0f172a;
+        }
+
+        @media (max-width: 480px) {
+            .hero-tile {
+                flex-basis: 160px;
+            }
+
+            /* same derivation at the 160px tile: 120 + 63.2 + 2 + 13.6 */
+            .hero-rail {
+                min-height: 199px;
+            }
+
+            .hero-rail.is-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
     </style>
 </head>
 
@@ -3314,6 +3573,20 @@
             Click any concept below to copy its full <b>DESIGN.md</b> to your clipboard.
         </p>
     </header>
+
+    <!-- Visual jump list. The id deliberately is NOT a SEG_PROMPTS key —
+         bindSegments would otherwise bolt a copy-the-brief handler onto it.
+         Tiles are injected by buildHeroIndex(); this is only the shell. -->
+    <section id="hero-index" class="hero-index" aria-labelledby="heroIndexTitle">
+        <div class="max-w-6xl mx-auto">
+            <div class="hero-index-head">
+                <h2 id="heroIndexTitle">Every concept, at a glance</h2>
+                <button type="button" id="heroIndexToggle" class="hero-index-toggle" aria-expanded="false"
+                    aria-controls="heroRail">Show all</button>
+            </div>
+            <div class="hero-rail" id="heroRail" role="list"></div>
+        </div>
+    </section>
 
     <div class="seg-toast" id="segToast" role="status" aria-live="polite"></div>
 
@@ -5538,9 +5811,18 @@
 
     <footer class="py-12 bg-slate-950 text-slate-500 text-center text-sm border-t border-slate-800">
         <div class="max-w-6xl mx-auto">
-            <p>&copy; 2026 UI Research Collective. Analysis derived from baseline image_314403.png.</p>
+            <p>&copy; 2026 Jose Tubera. Analysis derived from baseline image_314403.png.</p>
         </div>
     </footer>
+
+    <!-- Deliberately a child of <body>, never of a <section>: bindSegments
+         puts a copy-the-brief click handler on every concept section, and an
+         element outside them cannot bubble into one. -->
+    <a class="kofi-fab" href="https://ko-fi.com/iamstrix" target="_blank" rel="noopener noreferrer"
+        aria-label="Support this project on Ko-fi (opens in a new tab)">
+        <span class="kofi-cup" aria-hidden="true"></span>
+        <span class="kofi-label">Support on Ko-fi</span>
+    </a>
 
     <script>
         document.documentElement.classList.add('js');
@@ -9703,6 +9985,84 @@
             window.buildDesignMd = buildDesignMd;
         }
 
+        /* =================================================================
+           HERO INDEX
+           Built from SEG_PROMPTS rather than hand-written, because that
+           object is already keyed by section id, already carries the label
+           and name, and is already in page order — so the index cannot
+           drift out of sync with the document the way hand-maintained
+           copy does.
+
+           The thumbnails are drawImage copies of the specimens already
+           rendered into each section, not fresh renders: re-drawing 43
+           more at full size would cost tens of megabytes of canvas
+           backing store for pictures the page has drawn once already.
+           This is why it runs after drawAllLandings in boot().
+           ================================================================= */
+        const HERO_TILE_W = 256, HERO_TILE_H = 192;
+
+        function buildHeroIndex() {
+            const rail = document.getElementById('heroRail');
+            const btn = document.getElementById('heroIndexToggle');
+            if (!rail || !btn) return;
+
+            const frag = document.createDocumentFragment();
+            let n = 0;
+
+            Object.keys(SEG_PROMPTS).forEach(key => {
+                // A brief without a section is already reported by bindSegments;
+                // don't add a tile that would scroll nowhere.
+                if (!document.getElementById(key)) return;
+                const p = SEG_PROMPTS[key];
+
+                const a = document.createElement('a');
+                a.className = 'hero-tile';
+                a.href = '#' + key;
+                a.setAttribute('role', 'listitem');
+                if (p.series) a.dataset.series = p.series;
+
+                const c = document.createElement('canvas');
+                c.width = HERO_TILE_W;
+                c.height = HERO_TILE_H;
+                c.setAttribute('aria-hidden', 'true');
+                const src = document.getElementById(p.canvas);
+                if (src && src.width && src.height) {
+                    const cx = c.getContext('2d');
+                    cx.imageSmoothingEnabled = true;
+                    cx.imageSmoothingQuality = 'high';
+                    cx.drawImage(src, 0, 0, HERO_TILE_W, HERO_TILE_H);
+                }
+                a.appendChild(c);
+
+                // The caption is the link's accessible name — the canvas is
+                // decorative, so without this the tile would announce as bare.
+                const cap = document.createElement('span');
+                cap.className = 'hero-tile-cap';
+                const lab = document.createElement('b');
+                lab.textContent = p.label;
+                const nm = document.createElement('span');
+                nm.textContent = p.name;
+                cap.appendChild(lab);
+                cap.appendChild(nm);
+                a.appendChild(cap);
+
+                frag.appendChild(a);
+                n++;
+            });
+
+            rail.appendChild(frag);
+
+            // Count comes from what was actually built, never a literal — the
+            // page has already had one hard-coded total go stale.
+            const collapsed = 'Show all ' + n;
+            btn.textContent = collapsed;
+            btn.addEventListener('click', () => {
+                const open = rail.classList.toggle('is-grid');
+                btn.setAttribute('aria-expanded', String(open));
+                btn.textContent = open ? 'Collapse' : collapsed;
+            });
+        }
+
         /* --- Boot -------------------------------------------------------- */
         // Each mark is isolated so one failure can't blank the whole page,
         // which is what the old single window.onload chain risked.
@@ -9710,9 +10070,11 @@
             [drawAllLandings, drawDither]
                 .forEach(fn => { try { fn(); } catch (err) { console.warn(fn.name, err); } });
 
+            // buildHeroIndex copies the bitmaps drawAllLandings just produced,
+            // so it must stay in this second pass, after the first has run.
             [buildStarfield, bindRipples, bindTerminal, bindSpecular, bindParallax, bindAIStream,
                 bindKinetic, bindAmbient, buildChaos, bindScrollSpy, bindReveal, initCharts,
-                bindSegments]
+                bindSegments, buildHeroIndex]
                 .forEach(fn => { try { fn(); } catch (err) { console.warn(fn.name, err); } });
         }
 
