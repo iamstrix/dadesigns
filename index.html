@@ -3318,7 +3318,7 @@
            The rows and the title plate are two layers of ONE grid cell.
            ------------------------------------------------------------ */
         .hero-wall {
-            --wall-tile: 200px;
+            --wall-tile: 360px;
             --wall-gap: 8px;
             display: grid;
             position: relative;
@@ -3529,7 +3529,7 @@
 
         .hero-rail.is-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
             gap: .5rem;
             margin-top: 1.1rem;
         }
@@ -3600,13 +3600,13 @@
 
         @media (max-width: 900px) {
             .hero-wall {
-                --wall-tile: 160px;
+                --wall-tile: 288px;
             }
         }
 
         @media (max-width: 560px) {
             .hero-wall {
-                --wall-tile: 128px;
+                --wall-tile: 230px;
                 --wall-gap: 6px;
             }
 
@@ -10181,7 +10181,11 @@
            It runs after drawAllLandings in boot() because it re-encodes
            what that pass drew.
            ================================================================= */
-        const HERO_TILE_W = 256, HERO_TILE_H = 192;
+        // Sized to the largest tile the wall renders (360px wide), so the
+        // thumbnails are downscales of the 640x480 specimen rather than
+        // upscales of something smaller. Going to the full 640x480 would
+        // double the page's canvas memory for detail no tile can show.
+        const HERO_TILE_W = 384, HERO_TILE_H = 288;
         const HERO_ROWS = 3;
         const HERO_SPEED = 30;          // px per second, equal on every row
         const heroUrls = new Map();     // canvas id -> Promise<object URL>
