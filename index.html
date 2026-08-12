@@ -2742,17 +2742,11 @@
             inset: 0;
             z-index: 40;
             pointer-events: none;
-            opacity: 0;
-            transition: opacity .2s ease;
-            background: rgba(6, 8, 12, .42);
         }
 
-        /* backdrop-filter only while hot: 43 always-on filter layers on a
-           page this long is a real cost, and an invisible one is pure waste. */
         .seg.is-hot .seg-veil {
-            opacity: 1;
-            backdrop-filter: saturate(.55) brightness(.92);
-            -webkit-backdrop-filter: saturate(.55) brightness(.92);
+            /* The veil is now just a structural container; 
+               the shadowy aura lives on the modal itself. */
         }
 
         /* The cue rides the pointer rather than sitting at the section's
@@ -2938,7 +2932,7 @@
             content: '';
             position: absolute;
             inset: 0;
-            background: rgba(0, 0, 0, 0.75);
+            background: rgba(0, 0, 0, 0.55);
             pointer-events: none;
             z-index: 1;
         }
@@ -3363,7 +3357,7 @@
                 <div class="hero-track" data-dir="left"></div>
             </div>
         </div>
-        <div class="hero-plate-wrap z-10 relative text-white">
+        <div class="hero-plate-wrap z-10 relative text-white select-none">
             <div class="hero-plate mix-blend-difference pb-12">
                 <h1 class="text-6xl md:text-8xl font-black text-white mb-6 tracking-tighter leading-none" style="text-shadow: 0 4px 30px rgba(0,0,0,0.5);">Design Prompts<br/>for AI Agents.</h1>
                 
