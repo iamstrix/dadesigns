@@ -2930,8 +2930,17 @@
             display: grid;
             position: relative;
             overflow: hidden;
-            background: #010c09;
-            border-bottom: 1px solid #011611;
+            background: #000;
+            border-bottom: 1px solid #111;
+        }
+        /* Darken the tiles via an overlay so they sit back in the composition */
+        .hero-wall::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.75);
+            pointer-events: none;
+            z-index: 1;
         }
 
         /* Both layers claim the same cell, so the band ends up as tall as
@@ -3052,40 +3061,7 @@
         }
 
         .hero-plate::before {
-            content: '';
-            position: absolute;
-            /* An oblong burn: wider than tall, following the shape of the text
-               block rather than boxing it. Centred on the plate and sized
-               against it, but CLAMPED TO THE VIEWPORT — the wall clips its
-               overflow, and a burn cropped while still opaque lands as a hard
-               vertical edge across live tiles. The clamp is what makes the
-               ellipse survivable at mid widths; it is why this is not simply
-               inset like a box. */
-            left: 50%;
-            top: 50%;
-            width: min(190%, 100vw);
-            height: 150%;
-            transform: translate(-50%, -50%);
-            z-index: 0;
-            /* Colour and falloff are kept on separate layers. Blending a tint
-               into the alpha ramp muddies the fade; masking leaves it clean. */
-            background: linear-gradient(160deg, #fffefb 0%, #fcfcf9 45%, #f5f2e9 100%);
-            /* closest-side, so the burn actually reaches zero at its own edges.
-               farthest-corner would leave it still opaque where the box ends,
-               which is a hard edge by another route.
-
-               The solid stop has to clear the text's CORNERS, not its edges:
-               an ellipse cuts corners, and the corner distance combines both
-               axes as hypot(dx/rx, dy/ry). That is what the ellipse has to be
-               oversized for, and what the tests below measure directly. */
-            -webkit-mask-image: radial-gradient(closest-side ellipse at center,
-                    #000 0 40%, rgba(0, 0, 0, 0) 85%);
-            mask-image: radial-gradient(closest-side ellipse at center,
-                    #000 0 40%, rgba(0, 0, 0, 0) 85%);
-            /* Pseudo-elements inherit pointer-events, and the plate is auto —
-               without this the bloom's margin would swallow hover from the
-               rows underneath and stop them slowing. */
-            pointer-events: none;
+            display: none;
         }
 
         /* Without mask support the burn would paint as a hard-edged rectangle
@@ -3365,50 +3341,7 @@
         <div class="max-w-6xl mx-auto flex items-center">
             <span class="font-bold text-xl tracking-tight text-white shrink-0 mr-8">DADESIGNS</span>
             <div class="flex space-x-6 text-sm font-medium text-emerald-100/70 overflow-x-auto nav-scroller pb-1 w-full">
-                <a href="#baseline" class="hover:text-white transition whitespace-nowrap">Baseline X</a>
-                <a href="#neobrutalist" class="hover:text-white transition whitespace-nowrap">A: Brutal</a>
-                <a href="#glass" class="hover:text-white transition whitespace-nowrap">B: Glass</a>
-                <a href="#bento" class="hover:text-white transition whitespace-nowrap">C: Bento</a>
-                <a href="#skeuo" class="hover:text-white transition whitespace-nowrap">D: Soft UI</a>
-                <a href="#cyber" class="hover:text-white transition whitespace-nowrap">E: Cyber</a>
-                <a href="#material" class="hover:text-white transition whitespace-nowrap">F: Material</a>
-                <a href="#maximalism" class="hover:text-white transition whitespace-nowrap">G: Maximal</a>
-                <a href="#minimalism" class="hover:text-white transition whitespace-nowrap">H: Swiss</a>
-                <a href="#retro" class="hover:text-white transition whitespace-nowrap">I: Y2K</a>
-                <a href="#aurora" class="hover:text-white transition whitespace-nowrap">J: Aurora</a>
-                <a href="#memphis" class="hover:text-white transition whitespace-nowrap">K: Memphis</a>
-                <a href="#wireframe" class="hover:text-white transition whitespace-nowrap">L: Wireframe</a>
-                <a href="#clay" class="hover:text-white transition whitespace-nowrap">M: Clay</a>
-                <a href="#organic" class="hover:text-white transition whitespace-nowrap">N: Organic</a>
-                <a href="#synthwave" class="hover:text-white transition whitespace-nowrap">O: Synthwave</a>
-                <a href="#popart" class="hover:text-white transition whitespace-nowrap">P: Pop Art</a>
-                <a href="#zen" class="hover:text-white transition whitespace-nowrap">Q: Zen</a>
-                <a href="#riso" class="hover:text-white transition whitespace-nowrap">R: Risograph</a>
-                <a href="#cosmic" class="hover:text-white transition whitespace-nowrap">S: Cosmic</a>
-                <a href="#terminal" class="hover:text-white transition whitespace-nowrap">T: CLI</a>
-                <a href="#util" class="hover:text-white transition whitespace-nowrap">U: Utility</a>
-                <a href="#vaporwave" class="hover:text-white transition whitespace-nowrap">V: Vaporwave</a>
-                <a href="#watercolor" class="hover:text-white transition whitespace-nowrap">W: Watercolor</a>
-                <a href="#aero" class="hover:text-white transition whitespace-nowrap">Y: Aero</a>
-                <a href="#zine" class="hover:text-white transition whitespace-nowrap">Z: Zine</a>
-                <span class="nav-div">SERIES II</span>
-                <a href="#liquid" class="hover:text-white transition whitespace-nowrap">27: Liquid Glass</a>
-                <a href="#spatial" class="hover:text-white transition whitespace-nowrap">28: Spatial</a>
-                <a href="#ainative" class="hover:text-white transition whitespace-nowrap">29: AI-Native</a>
-                <a href="#kinetic" class="hover:text-white transition whitespace-nowrap">30: Kinetic Type</a>
-                <a href="#skeuotrue" class="hover:text-white transition whitespace-nowrap">31: Skeuomorph</a>
-                <a href="#bauhaus" class="hover:text-white transition whitespace-nowrap">32: Bauhaus</a>
-                <a href="#deco" class="hover:text-white transition whitespace-nowrap">33: Art Deco</a>
-                <a href="#a11y" class="hover:text-white transition whitespace-nowrap">34: Accessible</a>
-                <a href="#editorial" class="hover:text-white transition whitespace-nowrap">35: Editorial</a>
-                <a href="#designsystem" class="hover:text-white transition whitespace-nowrap">36: Design System</a>
-                <a href="#nouveau" class="hover:text-white transition whitespace-nowrap">37: Art Nouveau</a>
-                <a href="#konstrukt" class="hover:text-white transition whitespace-nowrap">38: Constructivism</a>
-                <a href="#stijl" class="hover:text-white transition whitespace-nowrap">39: De Stijl</a>
-                <a href="#psychedelic" class="hover:text-white transition whitespace-nowrap">40: Psychedelic</a>
-                <a href="#swisspunk" class="hover:text-white transition whitespace-nowrap">41: Swiss Punk</a>
-                <a href="#teletext" class="hover:text-white transition whitespace-nowrap">42: Teletext</a>
-                <a href="#bbs" class="hover:text-white transition whitespace-nowrap">43: ANSI / BBS</a>
+                <!-- Navigation purged for focus -->
             </div>
         </div>
     </nav>
@@ -3430,21 +3363,13 @@
                 <div class="hero-track" data-dir="left"></div>
             </div>
         </div>
-        <div class="hero-plate-wrap">
-            <div class="hero-plate">
-                <div class="flex justify-center mb-6">
-                    <img src="dadesigns.png" alt="Dadesigns Logo" class="w-16 md:w-20 object-contain drop-shadow-sm">
-                </div>
-                <h1 class="text-4xl md:text-6xl font-extrabold text-slate-900 mb-5 tracking-tight">Design Prompts<br/>for AI Agents.</h1>
-                <p class="text-lg md:text-xl text-slate-600 leading-relaxed max-w-2xl mx-auto">
-                    43 bold UI design languages, each with a complete <strong>DESIGN.md</strong> prompt. Click any concept to copy it &mdash; paste it into your AI coding agent and ship a styled app in minutes.
-                </p>
-                <div class="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4 relative z-10">
-                    <a href="#hero-index" onclick="document.getElementById('heroIndexToggle').click();" class="px-8 py-3 bg-slate-900 text-white rounded-full font-semibold hover:bg-slate-800 transition-colors shadow-lg">Browse All 43 Concepts</a>
-                </div>
-                <p class="seg-hint mt-8 mx-auto" id="segHint">
-                    <span class="seg-hint-key" aria-hidden="true">⌘</span>
-                    <span>Click any concept below to copy its full <b>DESIGN.md</b> to your clipboard.</span>
+        <div class="hero-plate-wrap z-10 relative text-white">
+            <div class="hero-plate mix-blend-difference pb-12">
+                <h1 class="text-6xl md:text-8xl font-black text-white mb-6 tracking-tighter leading-none" style="text-shadow: 0 4px 30px rgba(0,0,0,0.5);">Design Prompts<br/>for AI Agents.</h1>
+                
+                <p class="seg-hint mt-12 mx-auto inline-flex items-center gap-3 px-6 py-4 rounded-full border border-white/20 bg-black/40 backdrop-blur-md text-white shadow-2xl hover:bg-white hover:text-black transition-all cursor-crosshair text-sm font-mono tracking-wide" id="segHint">
+                    <span class="seg-hint-key opacity-50" aria-hidden="true">⌘</span>
+                    <span>Click any concept below to copy its full <b>DESIGN.md</b></span>
                 </p>
             </div>
         </div>
