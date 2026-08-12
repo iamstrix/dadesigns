@@ -1252,86 +1252,6 @@ function drawDither() {
     ctx.drawImage(buf, 0, 0, W, H);
 }
 
-/* --- Charts ----------------------------------------------------- */
-function initCharts() {
-    if (typeof Chart === 'undefined') return;
-
-    const radarCtx = document.getElementById('radarChart');
-    if (radarCtx) {
-        new Chart(radarCtx, {
-            type: 'radar',
-            data: {
-                labels: ['Clarity', 'Energy', 'Brand Identity', 'Accessibility', 'Visual Depth'],
-                datasets: [
-                    {
-                        label: 'Baseline X (AI Default)',
-                        data: [95, 20, 10, 90, 10],
-                        backgroundColor: 'rgba(99, 102, 241, 0.2)',
-                        borderColor: '#6366f1', pointBackgroundColor: '#6366f1'
-                    },
-                    {
-                        label: 'Concept A (Neobrutalism)',
-                        data: [70, 90, 95, 60, 25],
-                        backgroundColor: 'rgba(255, 209, 0, 0.25)',
-                        borderColor: '#000000', pointBackgroundColor: '#000000'
-                    },
-                    {
-                        label: 'Concept B (Glassmorphism)',
-                        data: [60, 60, 70, 40, 95],
-                        backgroundColor: 'rgba(161, 140, 209, 0.2)',
-                        borderColor: '#a18cd1', pointBackgroundColor: '#a18cd1'
-                    },
-                    {
-                        label: 'Concept 27 (Liquid Glass)',
-                        data: [70, 62, 88, 52, 100],
-                        backgroundColor: 'rgba(56, 189, 248, 0.18)',
-                        borderColor: '#38bdf8', pointBackgroundColor: '#38bdf8'
-                    },
-                    {
-                        label: 'Concept 34 (Accessibility-First)',
-                        data: [100, 22, 28, 100, 5],
-                        backgroundColor: 'rgba(30, 64, 175, 0.15)',
-                        borderColor: '#1e40af', pointBackgroundColor: '#1e40af'
-                    }
-                ]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                scales: {
-                    r: {
-                        angleLines: { color: 'rgba(0,0,0,.1)' },
-                        grid: { color: 'rgba(0,0,0,.1)' },
-                        pointLabels: { font: { family: 'Inter', size: 12 } },
-                        ticks: { display: false },
-                        suggestedMin: 0, suggestedMax: 100
-                    }
-                },
-                plugins: { legend: { position: 'bottom' } }
-            }
-        });
-    }
-
-    const barCtx = document.getElementById('barChart');
-    if (barCtx) {
-        new Chart(barCtx, {
-            type: 'bar',
-            data: {
-                labels: ['SaaS', 'Web3 / Crypto', 'E-commerce', 'Creative Agency', 'Dev Tools'],
-                datasets: [
-                    { label: 'Baseline X', data: [80, 20, 50, 5, 90], backgroundColor: '#1e293b' },
-                    { label: 'Hybrid Styles (F, C, M)', data: [60, 60, 80, 40, 50], backgroundColor: '#8b5cf6' },
-                    { label: 'Avant-Garde (A, G, Z)', data: [10, 80, 30, 95, 10], backgroundColor: '#f59e0b' }
-                ]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                scales: { y: { beginAtZero: true, max: 100 } },
-                plugins: { legend: { position: 'bottom' } }
-            }
-        });
-    }
-}
-
 /* =================================================================
    SEGMENT → DESIGN.md
    Clicking a concept copies a complete design brief for it. The
@@ -4436,7 +4356,7 @@ function boot() {
     // has run. buildHeroIndex only wires a button, but it shares the
     // same thumbnail cache, so it follows.
     [buildStarfield, bindRipples, bindTerminal, bindSpecular, bindParallax, bindAIStream,
-        bindKinetic, bindAmbient, buildChaos, bindScrollSpy, bindReveal, initCharts,
+        bindKinetic, bindAmbient, buildChaos, bindScrollSpy, bindReveal,
         bindSegments, buildHeroWall, buildHeroIndex]
         .forEach(fn => { try { fn(); } catch (err) { console.warn(fn.name, err); } });
 }

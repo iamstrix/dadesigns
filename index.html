@@ -4,10 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dadesigns</title>
+    <title>Dadesigns — UI Design Prompts for AI Coding Agents</title>
+    <meta name="description"
+        content="Browse 43 bold UI design languages. Click any concept to copy a complete DESIGN.md prompt your AI coding agent can execute. Free, no sign-up.">
     <link rel="icon" type="image/png" href="dadesigns.png">
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet"
@@ -80,15 +81,6 @@
             background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/></svg>");
             opacity: .18;
             mix-blend-mode: multiply;
-        }
-
-        .chart-container {
-            position: relative;
-            width: 100%;
-            max-width: 700px;
-            margin-inline: auto;
-            height: 350px;
-            max-height: 400px;
         }
 
         /* ============================================================
@@ -3210,22 +3202,28 @@
             z-index: 41;
             padding: .45rem .8rem;
             border-radius: 999px;
-            border: 1px solid rgba(15, 23, 42, .18);
+            border: 1px solid rgba(15, 23, 42, .28);
             background: rgba(248, 250, 252, .94);
             color: #0f172a;
+            box-shadow: 0 2px 8px rgba(15, 23, 42, .12);
             font-family: 'IBM Plex Mono', monospace;
             font-size: .68rem;
             font-weight: 600;
             letter-spacing: .04em;
             text-transform: uppercase;
             cursor: pointer;
-            opacity: 0;
-            transition: opacity .2s ease;
+            opacity: 1;
+            transition: opacity .2s ease, background .2s ease, color .2s ease;
         }
 
-        .seg:hover .seg-btn,
-        .seg-btn:focus-visible {
-            opacity: 1;
+        /* The copy affordance is the product, so it never hides behind hover.
+           The resting pill carries its own border and shadow because it has to
+           hold on light concepts (Zen, Minimalism, Wireframe) where a near-white
+           fill would otherwise dissolve into the section. Hover is now a
+           contrast state rather than a reveal. */
+        .seg:hover .seg-btn {
+            background: rgba(15, 23, 42, .95);
+            color: #fff;
         }
 
         .seg-btn:focus-visible {
@@ -3726,26 +3724,28 @@
 
     <!-- Chosen Palette: Dynamic Thematic Shift (Neutral base with high-contrast thematic injections) -->
     <!-- Application Structure Plan:
-        A top-down single-page report.
-        1. Introduction: Setting the context of 'Design X'.
-        2. Section X: Analysis of image_314403.png (The Baseline).
-        3. The Spectrum (A-Z): Discrete sections where the background and component styles transform to match the design concept.
-        4. Series II (27-43): Five clusters the A-Z run omitted — current-generation material languages
+        A catalogue of design languages, each one clickable and copyable.
+        The page is the browser; the product is the brief it hands over.
+        1. Hero: what the tool does — click a concept, paste the DESIGN.md into an agent.
+        2. Hero wall + index: 43 specimens, scannable by eye or by name.
+        3. Baseline X: the house style of AI-assisted development, shown so the rest has something to depart from.
+        4. The Spectrum (A-Z): discrete sections where the background and component styles transform to match the concept.
+        5. Series II (27-43): five clusters the A-Z run omitted — current-generation material languages
            (Liquid Glass, Spatial, AI-Native, Kinetic Type), pre-digital movements (true Skeuomorphism,
            Bauhaus, Art Deco), production patterns (Accessibility-First, Editorial, Design System),
            a second run of movements (Art Nouveau, Constructivism, De Stijl, Psychedelic, Swiss Punk),
            and the character-cell aesthetics that were hardware limits before they were styles
            (Teletext, ANSI/BBS).
-        5. Analytical Synthesis: Data visualizations comparing the designs.
+        6. Experimental: ten lab specimens with verdicts, no brief attached.
         Each segment is self-contained: its palette, type, geometry, motion and interaction model all derive
-        from the concept it documents, so the page can be *felt* rather than only read.
+        from the concept it documents, so the page can be *felt* before it is copied.
     -->
     <!-- Visualization & Content Choices:
-        - Radar Chart (Chart.js): compares 'Design Attributes' (Clarity, Energy, Brand, Accessibility, Depth).
-        - Bar Chart (Chart.js): adoption trends by industry.
         - Custom Canvas Elements: every concept renders the SAME landing page (nav, hero, CTA pair,
           three feature cards, footer) in its own treatment, HiDPI-aware. Holding the layout constant
           turns the document into a controlled comparison instead of a set of unrelated marks.
+          These canvases are load-bearing twice over: heroThumbUrl() in app.js re-encodes each one
+          into the hero marquee tiles, so removing a canvas removes its concept from the wall.
     -->
     <!-- ASSETS: fully self-contained. All textures/backgrounds are CSS- or canvas-generated;
          no remote imagery is fetched (the previous Wikimedia hotlinks 404'd or weighed 16 MB).
@@ -3756,7 +3756,7 @@
 
     <nav class="sticky-nav border-b border-emerald-900/50 py-4 px-6">
         <div class="max-w-6xl mx-auto flex items-center">
-            <span class="font-bold text-xl tracking-tight text-white shrink-0 mr-8">UI SPECTRUM</span>
+            <span class="font-bold text-xl tracking-tight text-white shrink-0 mr-8">DADESIGNS</span>
             <div class="flex space-x-6 text-sm font-medium text-emerald-100/70 overflow-x-auto nav-scroller pb-1 w-full">
                 <a href="#baseline" class="hover:text-white transition whitespace-nowrap">Baseline X</a>
                 <a href="#neobrutalist" class="hover:text-white transition whitespace-nowrap">A: Brutal</a>
@@ -3830,15 +3830,14 @@
                 <div class="flex justify-center mb-6">
                     <img src="dadesigns.png" alt="Dadesigns Logo" class="w-16 md:w-20 object-contain drop-shadow-sm">
                 </div>
-                <h1 class="text-4xl md:text-6xl font-extrabold text-slate-900 mb-5 tracking-tight">Beautiful UI Concepts.<br/>Ready to Copy.</h1>
+                <h1 class="text-4xl md:text-6xl font-extrabold text-slate-900 mb-5 tracking-tight">Design Prompts<br/>for AI Agents.</h1>
                 <p class="text-lg md:text-xl text-slate-600 leading-relaxed max-w-2xl mx-auto">
-                    Stop starting from scratch. Browse our collection of bold, personality-driven frameworks and copy the full <strong>DESIGN.md</strong> straight to your clipboard.
+                    43 bold UI design languages, each with a complete <strong>DESIGN.md</strong> prompt. Click any concept to copy it &mdash; paste it into your AI coding agent and ship a styled app in minutes.
                 </p>
                 <div class="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4 relative z-10">
-                    <a href="#hero-index" onclick="document.getElementById('heroIndexToggle').click();" class="px-8 py-3 bg-slate-900 text-white rounded-full font-semibold hover:bg-slate-800 transition-colors shadow-lg">Browse Concepts</a>
-                    <a href="https://ko-fi.com/iamstrix" target="_blank" rel="noopener noreferrer" class="px-8 py-3 bg-white text-slate-900 rounded-full font-semibold border border-slate-200 hover:bg-slate-50 transition-colors shadow-sm">Support on Ko-Fi</a>
+                    <a href="#hero-index" onclick="document.getElementById('heroIndexToggle').click();" class="px-8 py-3 bg-slate-900 text-white rounded-full font-semibold hover:bg-slate-800 transition-colors shadow-lg">Browse All 43 Concepts</a>
                 </div>
-                <p class="seg-hint mt-8 mx-auto" id="segHint" hidden>
+                <p class="seg-hint mt-8 mx-auto" id="segHint">
                     <span class="seg-hint-key" aria-hidden="true">⌘</span>
                     <span>Click any concept below to copy its full <b>DESIGN.md</b> to your clipboard.</span>
                 </p>
@@ -6057,54 +6056,9 @@
         </div>
     </section>
 
-    <!-- ANALYTICAL SYNTHESIS -->
-    <section class="py-24 px-6 bg-white border-t border-slate-100">
-        <div class="max-w-6xl mx-auto">
-            <div class="text-center mb-16">
-                <h3 class="text-4xl font-bold text-slate-900 mb-4">Comparative Analysis</h3>
-                <p class="text-slate-600 max-w-2xl mx-auto">Comparing the "AI Default" baseline against the diverse
-                    spectrum of modern design styles based on usability metrics and brand impact.</p>
-            </div>
-
-            <div class="grid lg:grid-cols-2 gap-12 mb-20">
-                <div class="bg-slate-50 p-8 rounded-3xl">
-                    <h4 class="text-lg font-bold mb-6 text-center">Design DNA Comparison</h4>
-                    <div class="chart-container">
-                        <canvas id="radarChart"></canvas>
-                    </div>
-                </div>
-                <div class="bg-slate-50 p-8 rounded-3xl">
-                    <h4 class="text-lg font-bold mb-6 text-center">Industry Adoption Forecast (2026)</h4>
-                    <div class="chart-container">
-                        <canvas id="barChart"></canvas>
-                    </div>
-                </div>
-            </div>
-
-            <div class="grid md:grid-cols-3 gap-8">
-                <div class="p-6">
-                    <h5 class="font-bold text-slate-800 mb-2">Clarity vs. Identity</h5>
-                    <p class="text-sm text-slate-500">Baseline X offers maximum clarity but zero identity. Neobrutalism
-                        flips the script, prioritising a memorable brand voice over immediate conventional legibility.
-                    </p>
-                </div>
-                <div class="p-6">
-                    <h5 class="font-bold text-slate-800 mb-2">Accessibility Constraints</h5>
-                    <p class="text-sm text-slate-500">Glassmorphism and Neumorphism require careful contrast management
-                        to meet WCAG standards, often sacrificed for aesthetic depth.</p>
-                </div>
-                <div class="p-6">
-                    <h5 class="font-bold text-slate-800 mb-2">The Hybrid Future</h5>
-                    <p class="text-sm text-slate-500">Modern applications are moving toward a 'Bento-Glass' hybrid:
-                        structured layouts with soft translucency for depth.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
     <footer class="py-12 bg-slate-950 text-slate-500 text-center text-sm border-t border-slate-800">
         <div class="max-w-6xl mx-auto">
-            <p>&copy; 2026 Jose Tubera. Analysis derived from baseline image_314403.png.</p>
+            <p>&copy; 2026 Jose Tubera. Design prompts for AI-native development.</p>
         </div>
     </footer>
 
