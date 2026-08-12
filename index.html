@@ -98,9 +98,10 @@
             position: sticky;
             top: 0;
             z-index: 50;
-            background: rgba(252, 252, 249, .82);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+            background-color: rgba(1, 12, 9, 0.95);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            color: #ffffff;
         }
 
         .nav-scroller::-webkit-scrollbar {
@@ -3323,8 +3324,8 @@
             display: grid;
             position: relative;
             overflow: hidden;
-            background: var(--bg-master);
-            border-bottom: 1px solid #e2e8f0;
+            background: #010c09;
+            border-bottom: 1px solid #011611;
         }
 
         /* Both layers claim the same cell, so the band ends up as tall as
@@ -3472,9 +3473,9 @@
                axes as hypot(dx/rx, dy/ry). That is what the ellipse has to be
                oversized for, and what the tests below measure directly. */
             -webkit-mask-image: radial-gradient(closest-side ellipse at center,
-                    #000 0 82%, rgba(0, 0, 0, 0) 100%);
+                    #000 0 40%, rgba(0, 0, 0, 0) 85%);
             mask-image: radial-gradient(closest-side ellipse at center,
-                    #000 0 82%, rgba(0, 0, 0, 0) 100%);
+                    #000 0 40%, rgba(0, 0, 0, 0) 85%);
             /* Pseudo-elements inherit pointer-events, and the plate is auto —
                without this the bloom's margin would swallow hover from the
                rows underneath and stop them slowing. */
@@ -3753,56 +3754,56 @@
     <!-- Concept 34 argues for accessible defaults; the page should honour its own argument. -->
     <a href="#baseline" class="skip-link">Skip to content</a>
 
-    <nav class="sticky-nav border-b border-slate-200 py-4 px-6">
+    <nav class="sticky-nav border-b border-emerald-900/50 py-4 px-6">
         <div class="max-w-6xl mx-auto flex items-center">
-            <span class="font-bold text-xl tracking-tight text-slate-800 shrink-0 mr-8">UI SPECTRUM</span>
-            <div class="flex space-x-6 text-sm font-medium text-slate-600 overflow-x-auto nav-scroller pb-1 w-full">
-                <a href="#baseline" class="hover:text-slate-900 transition whitespace-nowrap">Baseline X</a>
-                <a href="#neobrutalist" class="hover:text-slate-900 transition whitespace-nowrap">A: Brutal</a>
-                <a href="#glass" class="hover:text-slate-900 transition whitespace-nowrap">B: Glass</a>
-                <a href="#bento" class="hover:text-slate-900 transition whitespace-nowrap">C: Bento</a>
-                <a href="#skeuo" class="hover:text-slate-900 transition whitespace-nowrap">D: Soft UI</a>
-                <a href="#cyber" class="hover:text-slate-900 transition whitespace-nowrap">E: Cyber</a>
-                <a href="#material" class="hover:text-slate-900 transition whitespace-nowrap">F: Material</a>
-                <a href="#maximalism" class="hover:text-slate-900 transition whitespace-nowrap">G: Maximal</a>
-                <a href="#minimalism" class="hover:text-slate-900 transition whitespace-nowrap">H: Swiss</a>
-                <a href="#retro" class="hover:text-slate-900 transition whitespace-nowrap">I: Y2K</a>
-                <a href="#aurora" class="hover:text-slate-900 transition whitespace-nowrap">J: Aurora</a>
-                <a href="#memphis" class="hover:text-slate-900 transition whitespace-nowrap">K: Memphis</a>
-                <a href="#wireframe" class="hover:text-slate-900 transition whitespace-nowrap">L: Wireframe</a>
-                <a href="#clay" class="hover:text-slate-900 transition whitespace-nowrap">M: Clay</a>
-                <a href="#organic" class="hover:text-slate-900 transition whitespace-nowrap">N: Organic</a>
-                <a href="#synthwave" class="hover:text-slate-900 transition whitespace-nowrap">O: Synthwave</a>
-                <a href="#popart" class="hover:text-slate-900 transition whitespace-nowrap">P: Pop Art</a>
-                <a href="#zen" class="hover:text-slate-900 transition whitespace-nowrap">Q: Zen</a>
-                <a href="#riso" class="hover:text-slate-900 transition whitespace-nowrap">R: Risograph</a>
-                <a href="#cosmic" class="hover:text-slate-900 transition whitespace-nowrap">S: Cosmic</a>
-                <a href="#terminal" class="hover:text-slate-900 transition whitespace-nowrap">T: CLI</a>
-                <a href="#util" class="hover:text-slate-900 transition whitespace-nowrap">U: Utility</a>
-                <a href="#vaporwave" class="hover:text-slate-900 transition whitespace-nowrap">V: Vaporwave</a>
-                <a href="#watercolor" class="hover:text-slate-900 transition whitespace-nowrap">W: Watercolor</a>
-                <a href="#aero" class="hover:text-slate-900 transition whitespace-nowrap">Y: Aero</a>
-                <a href="#zine" class="hover:text-slate-900 transition whitespace-nowrap">Z: Zine</a>
+            <span class="font-bold text-xl tracking-tight text-white shrink-0 mr-8">UI SPECTRUM</span>
+            <div class="flex space-x-6 text-sm font-medium text-emerald-100/70 overflow-x-auto nav-scroller pb-1 w-full">
+                <a href="#baseline" class="hover:text-white transition whitespace-nowrap">Baseline X</a>
+                <a href="#neobrutalist" class="hover:text-white transition whitespace-nowrap">A: Brutal</a>
+                <a href="#glass" class="hover:text-white transition whitespace-nowrap">B: Glass</a>
+                <a href="#bento" class="hover:text-white transition whitespace-nowrap">C: Bento</a>
+                <a href="#skeuo" class="hover:text-white transition whitespace-nowrap">D: Soft UI</a>
+                <a href="#cyber" class="hover:text-white transition whitespace-nowrap">E: Cyber</a>
+                <a href="#material" class="hover:text-white transition whitespace-nowrap">F: Material</a>
+                <a href="#maximalism" class="hover:text-white transition whitespace-nowrap">G: Maximal</a>
+                <a href="#minimalism" class="hover:text-white transition whitespace-nowrap">H: Swiss</a>
+                <a href="#retro" class="hover:text-white transition whitespace-nowrap">I: Y2K</a>
+                <a href="#aurora" class="hover:text-white transition whitespace-nowrap">J: Aurora</a>
+                <a href="#memphis" class="hover:text-white transition whitespace-nowrap">K: Memphis</a>
+                <a href="#wireframe" class="hover:text-white transition whitespace-nowrap">L: Wireframe</a>
+                <a href="#clay" class="hover:text-white transition whitespace-nowrap">M: Clay</a>
+                <a href="#organic" class="hover:text-white transition whitespace-nowrap">N: Organic</a>
+                <a href="#synthwave" class="hover:text-white transition whitespace-nowrap">O: Synthwave</a>
+                <a href="#popart" class="hover:text-white transition whitespace-nowrap">P: Pop Art</a>
+                <a href="#zen" class="hover:text-white transition whitespace-nowrap">Q: Zen</a>
+                <a href="#riso" class="hover:text-white transition whitespace-nowrap">R: Risograph</a>
+                <a href="#cosmic" class="hover:text-white transition whitespace-nowrap">S: Cosmic</a>
+                <a href="#terminal" class="hover:text-white transition whitespace-nowrap">T: CLI</a>
+                <a href="#util" class="hover:text-white transition whitespace-nowrap">U: Utility</a>
+                <a href="#vaporwave" class="hover:text-white transition whitespace-nowrap">V: Vaporwave</a>
+                <a href="#watercolor" class="hover:text-white transition whitespace-nowrap">W: Watercolor</a>
+                <a href="#aero" class="hover:text-white transition whitespace-nowrap">Y: Aero</a>
+                <a href="#zine" class="hover:text-white transition whitespace-nowrap">Z: Zine</a>
                 <span class="nav-div">SERIES II</span>
-                <a href="#liquid" class="hover:text-slate-900 transition whitespace-nowrap">27: Liquid Glass</a>
-                <a href="#spatial" class="hover:text-slate-900 transition whitespace-nowrap">28: Spatial</a>
-                <a href="#ainative" class="hover:text-slate-900 transition whitespace-nowrap">29: AI-Native</a>
-                <a href="#kinetic" class="hover:text-slate-900 transition whitespace-nowrap">30: Kinetic Type</a>
-                <a href="#skeuotrue" class="hover:text-slate-900 transition whitespace-nowrap">31: Skeuomorph</a>
-                <a href="#bauhaus" class="hover:text-slate-900 transition whitespace-nowrap">32: Bauhaus</a>
-                <a href="#deco" class="hover:text-slate-900 transition whitespace-nowrap">33: Art Deco</a>
-                <a href="#a11y" class="hover:text-slate-900 transition whitespace-nowrap">34: Accessible</a>
-                <a href="#editorial" class="hover:text-slate-900 transition whitespace-nowrap">35: Editorial</a>
-                <a href="#designsystem" class="hover:text-slate-900 transition whitespace-nowrap">36: Design System</a>
-                <a href="#nouveau" class="hover:text-slate-900 transition whitespace-nowrap">37: Art Nouveau</a>
-                <a href="#konstrukt" class="hover:text-slate-900 transition whitespace-nowrap">38: Constructivism</a>
-                <a href="#stijl" class="hover:text-slate-900 transition whitespace-nowrap">39: De Stijl</a>
-                <a href="#psychedelic" class="hover:text-slate-900 transition whitespace-nowrap">40: Psychedelic</a>
-                <a href="#swisspunk" class="hover:text-slate-900 transition whitespace-nowrap">41: Swiss Punk</a>
-                <a href="#teletext" class="hover:text-slate-900 transition whitespace-nowrap">42: Teletext</a>
-                <a href="#bbs" class="hover:text-slate-900 transition whitespace-nowrap">43: ANSI / BBS</a>
+                <a href="#liquid" class="hover:text-white transition whitespace-nowrap">27: Liquid Glass</a>
+                <a href="#spatial" class="hover:text-white transition whitespace-nowrap">28: Spatial</a>
+                <a href="#ainative" class="hover:text-white transition whitespace-nowrap">29: AI-Native</a>
+                <a href="#kinetic" class="hover:text-white transition whitespace-nowrap">30: Kinetic Type</a>
+                <a href="#skeuotrue" class="hover:text-white transition whitespace-nowrap">31: Skeuomorph</a>
+                <a href="#bauhaus" class="hover:text-white transition whitespace-nowrap">32: Bauhaus</a>
+                <a href="#deco" class="hover:text-white transition whitespace-nowrap">33: Art Deco</a>
+                <a href="#a11y" class="hover:text-white transition whitespace-nowrap">34: Accessible</a>
+                <a href="#editorial" class="hover:text-white transition whitespace-nowrap">35: Editorial</a>
+                <a href="#designsystem" class="hover:text-white transition whitespace-nowrap">36: Design System</a>
+                <a href="#nouveau" class="hover:text-white transition whitespace-nowrap">37: Art Nouveau</a>
+                <a href="#konstrukt" class="hover:text-white transition whitespace-nowrap">38: Constructivism</a>
+                <a href="#stijl" class="hover:text-white transition whitespace-nowrap">39: De Stijl</a>
+                <a href="#psychedelic" class="hover:text-white transition whitespace-nowrap">40: Psychedelic</a>
+                <a href="#swisspunk" class="hover:text-white transition whitespace-nowrap">41: Swiss Punk</a>
+                <a href="#teletext" class="hover:text-white transition whitespace-nowrap">42: Teletext</a>
+                <a href="#bbs" class="hover:text-white transition whitespace-nowrap">43: ANSI / BBS</a>
                 <span class="nav-div">EXPERIMENTAL</span>
-                <a href="#experimental" class="hover:text-slate-900 transition whitespace-nowrap">EXP: The Voyage</a>
+                <a href="#experimental" class="hover:text-white transition whitespace-nowrap">EXP: The Voyage</a>
             </div>
         </div>
     </nav>
@@ -3826,14 +3827,18 @@
         </div>
         <div class="hero-plate-wrap">
             <div class="hero-plate">
-                <h1 class="text-4xl md:text-6xl font-extrabold text-slate-900 mb-5 tracking-tight">The Evolution of the
-                    Interface.</h1>
-                <p class="text-lg md:text-xl text-slate-600 leading-relaxed">
-                    From the generic AI-generated defaults to bold, personality-driven frameworks. We explore the space
-                    between
-                    <strong>Baseline X</strong> and the diverse horizons of modern digital design.
+                <div class="flex justify-center mb-6">
+                    <img src="dadesigns.png" alt="Dadesigns Logo" class="w-16 md:w-20 object-contain drop-shadow-sm">
+                </div>
+                <h1 class="text-4xl md:text-6xl font-extrabold text-slate-900 mb-5 tracking-tight">Beautiful UI Concepts.<br/>Ready to Copy.</h1>
+                <p class="text-lg md:text-xl text-slate-600 leading-relaxed max-w-2xl mx-auto">
+                    Stop starting from scratch. Browse our collection of bold, personality-driven frameworks and copy the full <strong>DESIGN.md</strong> straight to your clipboard.
                 </p>
-                <p class="seg-hint" id="segHint" hidden>
+                <div class="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4 relative z-10">
+                    <a href="#hero-index" onclick="document.getElementById('heroIndexToggle').click();" class="px-8 py-3 bg-slate-900 text-white rounded-full font-semibold hover:bg-slate-800 transition-colors shadow-lg">Browse Concepts</a>
+                    <a href="https://ko-fi.com/iamstrix" target="_blank" rel="noopener noreferrer" class="px-8 py-3 bg-white text-slate-900 rounded-full font-semibold border border-slate-200 hover:bg-slate-50 transition-colors shadow-sm">Support on Ko-Fi</a>
+                </div>
+                <p class="seg-hint mt-8 mx-auto" id="segHint" hidden>
                     <span class="seg-hint-key" aria-hidden="true">⌘</span>
                     <span>Click any concept below to copy its full <b>DESIGN.md</b> to your clipboard.</span>
                 </p>
