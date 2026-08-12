@@ -1162,176 +1162,6 @@ function bindReveal() {
     items.forEach(i => io.observe(i));
 }
 
-/* --- EXPERIMENTAL chapter --------------------------------------- */
-
-// EXP-06: bind the mesh gradient to a value instead of a timer
-function bindAmbient() {
-    const field = document.getElementById('xAmbient');
-    const input = document.getElementById('xLoad');
-    const out = document.getElementById('xLoadOut');
-    if (!field || !input) return;
-    const apply = () => {
-        const v = +input.value;
-        // 140deg (green) -> 0deg (red); spread widens as load climbs
-        field.style.setProperty('--hue', Math.round(140 - v * 1.4));
-        field.style.setProperty('--spread', Math.round(38 + v * 0.35));
-        if (out) out.textContent = v + '%';
-    };
-    input.addEventListener('input', apply);
-    apply();
-}
-
-// EXP-07 / EXP-10: one seeded generator feeds both fields, so the
-// only difference between the two specimens is tone. Without the
-// seed the comparison would prove nothing.
-function buildChaos() {
-    const mono = document.getElementById('xMonoMax');
-    const calm = document.getElementById('xLoudCalm');
-    if (!mono && !calm) return;
-
-    let seed = 20260729;
-    const rnd = () => (seed = (seed * 1664525 + 1013904223) % 4294967296) / 4294967296;
-
-    const words = ['MORE', 'LOUD', 'NOW', 'YES', 'BIG', 'RAW', 'GO', 'MAX', 'HYPE', 'ALL',
-        'EXTRA', 'PEAK', 'OVER', 'STACK', 'PILE', 'DENSE', 'HEAP', 'RIOT'];
-    const layers = [];
-    for (let i = 0; i < 26; i++) {
-        layers.push({
-            x: rnd() * 88, y: rnd() * 78,
-            rot: (rnd() * 44 - 22),
-            w: 58 + rnd() * 74,
-            word: words[Math.floor(rnd() * words.length)],
-            tone: rnd()
-        });
-    }
-
-    const paint = (host, toneFn) => {
-        if (!host) return;
-        const frag = document.createDocumentFragment();
-        layers.forEach(l => {
-            const s = document.createElement('span');
-            s.textContent = l.word;
-            s.style.cssText =
-                `left:${l.x}%;top:${l.y}%;width:${l.w}px;` +
-                `transform:rotate(${l.rot}deg);background:${toneFn(l.tone)}`;
-            frag.appendChild(s);
-        });
-        host.appendChild(frag);
-    };
-
-    // EXP-07: full tonal range, single hue
-    paint(mono, t => `hsl(348 ${55 + t * 30}% ${26 + t * 62}%)`);
-    // EXP-10: same geometry, tonal range compressed to ~8%
-    paint(calm, t => `hsl(38 ${10 + t * 6}% ${85 + t * 8}%)`);
-}
-
-// EXP-09: a smooth ramp rendered in exactly two colours,
-// 4x4 Bayer ordered dither — tone with no grey anywhere.
-function drawDither() {
-    const ctx = getCtx('canvasDither'); if (!ctx) return;
-    const W = 300, H = 90;
-    const bayer = [
-        [0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]
-    ];
-    const img = ctx.createImageData(W, H);
-    for (let y = 0; y < H; y++) {
-        for (let x = 0; x < W; x++) {
-            const ramp = x / (W - 1);
-            const threshold = (bayer[y & 3][x & 3] + 0.5) / 16;
-            const on = ramp > threshold ? 0 : 255;   // 0 = black, 255 = white
-            const i = (y * W + x) * 4;
-            img.data[i] = img.data[i + 1] = img.data[i + 2] = on;
-            img.data[i + 3] = 255;
-        }
-    }
-    // putImageData ignores the DPR transform, so draw through a buffer
-    const buf = document.createElement('canvas');
-    buf.width = W; buf.height = H;
-    buf.getContext('2d').putImageData(img, 0, 0);
-    ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(buf, 0, 0, W, H);
-}
-
-/* --- Charts ----------------------------------------------------- */
-function initCharts() {
-    if (typeof Chart === 'undefined') return;
-
-    const radarCtx = document.getElementById('radarChart');
-    if (radarCtx) {
-        new Chart(radarCtx, {
-            type: 'radar',
-            data: {
-                labels: ['Clarity', 'Energy', 'Brand Identity', 'Accessibility', 'Visual Depth'],
-                datasets: [
-                    {
-                        label: 'Baseline X (AI Default)',
-                        data: [95, 20, 10, 90, 10],
-                        backgroundColor: 'rgba(99, 102, 241, 0.2)',
-                        borderColor: '#6366f1', pointBackgroundColor: '#6366f1'
-                    },
-                    {
-                        label: 'Concept A (Neobrutalism)',
-                        data: [70, 90, 95, 60, 25],
-                        backgroundColor: 'rgba(255, 209, 0, 0.25)',
-                        borderColor: '#000000', pointBackgroundColor: '#000000'
-                    },
-                    {
-                        label: 'Concept B (Glassmorphism)',
-                        data: [60, 60, 70, 40, 95],
-                        backgroundColor: 'rgba(161, 140, 209, 0.2)',
-                        borderColor: '#a18cd1', pointBackgroundColor: '#a18cd1'
-                    },
-                    {
-                        label: 'Concept 27 (Liquid Glass)',
-                        data: [70, 62, 88, 52, 100],
-                        backgroundColor: 'rgba(56, 189, 248, 0.18)',
-                        borderColor: '#38bdf8', pointBackgroundColor: '#38bdf8'
-                    },
-                    {
-                        label: 'Concept 34 (Accessibility-First)',
-                        data: [100, 22, 28, 100, 5],
-                        backgroundColor: 'rgba(30, 64, 175, 0.15)',
-                        borderColor: '#1e40af', pointBackgroundColor: '#1e40af'
-                    }
-                ]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                scales: {
-                    r: {
-                        angleLines: { color: 'rgba(0,0,0,.1)' },
-                        grid: { color: 'rgba(0,0,0,.1)' },
-                        pointLabels: { font: { family: 'Inter', size: 12 } },
-                        ticks: { display: false },
-                        suggestedMin: 0, suggestedMax: 100
-                    }
-                },
-                plugins: { legend: { position: 'bottom' } }
-            }
-        });
-    }
-
-    const barCtx = document.getElementById('barChart');
-    if (barCtx) {
-        new Chart(barCtx, {
-            type: 'bar',
-            data: {
-                labels: ['SaaS', 'Web3 / Crypto', 'E-commerce', 'Creative Agency', 'Dev Tools'],
-                datasets: [
-                    { label: 'Baseline X', data: [80, 20, 50, 5, 90], backgroundColor: '#1e293b' },
-                    { label: 'Hybrid Styles (F, C, M)', data: [60, 60, 80, 40, 50], backgroundColor: '#8b5cf6' },
-                    { label: 'Avant-Garde (A, G, Z)', data: [10, 80, 30, 95, 10], backgroundColor: '#f59e0b' }
-                ]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                scales: { y: { beginAtZero: true, max: 100 } },
-                plugins: { legend: { position: 'bottom' } }
-            }
-        });
-    }
-}
-
 /* =================================================================
    SEGMENT → DESIGN.md
    Clicking a concept copies a complete design brief for it. The
@@ -4428,7 +4258,7 @@ function buildHeroIndex() {
 // Each mark is isolated so one failure can't blank the whole page,
 // which is what the old single window.onload chain risked.
 function boot() {
-    [drawAllLandings, drawDither]
+    [drawAllLandings]
         .forEach(fn => { try { fn(); } catch (err) { console.warn(fn.name, err); } });
 
     // buildHeroWall re-encodes the bitmaps drawAllLandings just
@@ -4436,7 +4266,7 @@ function boot() {
     // has run. buildHeroIndex only wires a button, but it shares the
     // same thumbnail cache, so it follows.
     [buildStarfield, bindRipples, bindTerminal, bindSpecular, bindParallax, bindAIStream,
-        bindKinetic, bindAmbient, buildChaos, bindScrollSpy, bindReveal, initCharts,
+        bindKinetic, bindScrollSpy, bindReveal,
         bindSegments, buildHeroWall, buildHeroIndex]
         .forEach(fn => { try { fn(); } catch (err) { console.warn(fn.name, err); } });
 }
